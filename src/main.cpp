@@ -1,3 +1,4 @@
+#include <csignal>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -13,6 +14,17 @@ extern "C" {
 #include "gatekeeper.h"
 #include "pikeman.h"
 
+// This is global so we can trap and gracefully shut it down.
+kyotopantry::gatekeeper *mainKeeper = NULL;
+
+void graceful_shutdown(int sig) {
+    if (mainKeeper != NULL) {
+        ol_log_msg(LOG_WARN, "Caught SIGINT. Shutting down gracefully.");
+        delete mainKeeper;
+    }
+    exit(0);
+}
+
 bool file_exists(const char *path) {
     int fd;
     fd = open(path, O_RDONLY);
@@ -27,6 +39,8 @@ bool file_exists(const char *path) {
 }
 
 int main(int argc, char *argv[]) {
+    signal(SIGINT, graceful_shutdown);
+
     bool verbose = false;
     int num_workers = 1;
 
@@ -65,7 +79,7 @@ int main(int argc, char *argv[]) {
 
     // Process files:
     int files_added = 0;
-    kyotopantry::gatekeeper mainKeeper;
+    mainKeeper = new kyotopantry::gatekeeper();
     for (i = files_start_at; i < argc; i++) {
         const std::string file_to_add = argv[i];
 
@@ -77,7 +91,7 @@ int main(int argc, char *argv[]) {
         if (verbose)
             ol_log_msg(LOG_INFO, "Adding %s to queue...", file_to_add.c_str());
 
-        if (!mainKeeper.queue_file_job(&file_to_add)) {
+        if (!mainKeeper->queue_file_job(&file_to_add)) {
             ol_log_msg(LOG_ERR, "Could not add file to queue.");
             return 1;
         }
@@ -93,7 +107,7 @@ int main(int argc, char *argv[]) {
         ol_log_msg(LOG_INFO, "Processing %i files...", files_added);
 
     // Actually do the processing:
-    mainKeeper.main_loop(verbose, num_workers);
+    mainKeeper->main_loop(verbose, num_workers);
 
     return 0;
 }
