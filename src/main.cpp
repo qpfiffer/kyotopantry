@@ -29,6 +29,7 @@ int main(int argc, char *argv[]) {
     // Main gatekeeper:
     kyotopantry::gatekeeper mainKeeper;
     bool verbose = false;
+    int num_workers = 1;
 
 
     // Look for any arguments:
@@ -40,6 +41,13 @@ int main(int argc, char *argv[]) {
 
             if (cmd == "v" || cmd == "-verbose") {
                 verbose = true;
+            } else if (cmd == "j" || cmd == "jobs") {
+                // ALL THIS FUCKING TARPIT!
+                i++;
+                std::string jobs_count = argv[i];
+                num_workers = std::stoi(jobs_count);
+                if (verbose)
+                    ol_log_msg(LOG_INFO, "Running with %i workers.", num_workers);
             }
         } else {
             // This isn't something that starts with a -. Assume it is a file
