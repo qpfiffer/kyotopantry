@@ -15,5 +15,5 @@ clean:
 	$(CC) $(CPPFLAGS) $(INCLUDES) -fpic -c $<
 
 $(NAME): main.o
-	$(CC) $(CPPFLAGS) $(INCLUDES) -o $(NAME) $(LIBOLEG) $^ $(LIBS)
+	$(CC) $(CPPFLAGS) $(INCLUDES) -o $(NAME) $^ $(LIBOLEG) $(LIBS)
 
