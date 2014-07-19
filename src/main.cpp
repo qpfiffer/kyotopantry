@@ -11,6 +11,7 @@ extern "C" {
 }
 
 #include "gatekeeper.h"
+#include "pikeman.h"
 
 bool file_exists(const char *path) {
     int fd;
@@ -26,8 +27,6 @@ bool file_exists(const char *path) {
 }
 
 int main(int argc, char *argv[]) {
-    // Main gatekeeper:
-    kyotopantry::gatekeeper mainKeeper;
     bool verbose = false;
     int num_workers = 1;
 
@@ -66,6 +65,7 @@ int main(int argc, char *argv[]) {
 
     // Process files:
     int files_added = 0;
+    kyotopantry::gatekeeper mainKeeper;
     for (i = files_start_at; i < argc; i++) {
         const std::string file_to_add = argv[i];
 
@@ -91,6 +91,9 @@ int main(int argc, char *argv[]) {
 
     if (verbose)
         ol_log_msg(LOG_INFO, "Processing %i files...", files_added);
+
+    // Actually do the processing:
+    mainKeeper.main_loop(verbose, num_workers);
 
     return 0;
 }
