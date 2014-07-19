@@ -17,7 +17,8 @@ make liboleg
 kyotopantry
 -----------
 
-You'll need ZeroMQ and Msgpack. Make sure you've already built liboleg.
+kyotopantry requires a C++11-enabled compiler. You'll also need ZeroMQ and
+Msgpack. Make sure you've already built liboleg.
 
 ```bash
 sudo apt-get install libzmq-dev libmsgpack-dev
