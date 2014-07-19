@@ -6,6 +6,9 @@
 
 #define GK_FAILED_TO_OPEN 600
 
+#define MAINLOOP_URI "ipc://.mainloop.sock"
+#define SCHEDULER_URI "ipc://.scheduler.sock"
+
 extern "C" {
 #include <oleg.h>
 #include <logging.h>
