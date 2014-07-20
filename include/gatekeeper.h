@@ -29,5 +29,8 @@ namespace kyotopantry {
         bool verbose;
         ol_database *jobs_db;
         std::thread scheduler_thread;
+
+        void get_jobs_from_db(std::vector<std::string> *jobs_list);
+        std::string get_next_job();
     };
 }

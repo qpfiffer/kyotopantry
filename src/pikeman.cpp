@@ -39,5 +39,9 @@ void pikeman::do_work() {
     memcpy((void *)zrequest.data(), request->data(), request->size());
     ol_log_msg(LOG_INFO, "Thread %i Sending request for job.", this->get_thread_id());
     socket.send(zrequest);
-    ol_log_msg(LOG_INFO, "Thread %i Sent request. Exiting.", this->get_thread_id());
+
+    zmq::message_t new_job_resp;
+    assert(socket.recv(&new_job_resp) == true);
+
+    ol_log_msg(LOG_INFO, "Thread %i Received job.", this->get_thread_id());
 }

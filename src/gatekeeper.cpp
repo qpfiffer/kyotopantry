@@ -31,10 +31,9 @@ gatekeeper::~gatekeeper() {
     ol_close(jobs_db);
 }
 
-bool gatekeeper::queue_file_job(std::string &path) {
+void gatekeeper::get_jobs_from_db(std::vector<std::string> *jobs_list) {
     size_t datasize;
     unsigned char *job_results = NULL;
-    std::vector<std::string> jobs_list;
     // Pull jobs from db
     assert(ol_unjar_ds(jobs_db, JOBS_LIST, strlen(JOBS_LIST), &job_results, &datasize) == 0);
 
@@ -43,7 +42,14 @@ bool gatekeeper::queue_file_job(std::string &path) {
 
     msgpack::unpack(&unpacked, (char *)job_results, datasize);
     obj = unpacked.get();
-    obj.convert(&jobs_list);
+    obj.convert(jobs_list);
+
+    free(job_results);
+}
+
+bool gatekeeper::queue_file_job(std::string &path) {
+    std::vector<std::string> jobs_list;
+    get_jobs_from_db(&jobs_list);
 
     // Actually add it to the thing in the DB
     jobs_list.push_back(path);
@@ -55,8 +61,13 @@ bool gatekeeper::queue_file_job(std::string &path) {
     int ret = ol_jar(jobs_db, JOBS_LIST, strlen(JOBS_LIST), (unsigned char *)to_save->data(), to_save->size());
     assert(ret == 0);
 
-    free(job_results);
     return true;
+}
+
+std::string gatekeeper::get_next_job() {
+    std::vector<std::string> jobs_list;
+    get_jobs_from_db(&jobs_list);
+    return "";
 }
 
 void gatekeeper::scheduler() {
@@ -81,10 +92,19 @@ void gatekeeper::scheduler() {
         obj = unpacked.get();
         obj.convert(&resp);
 
-        ol_log_msg(LOG_INFO, "Scheduler receieved: %s", obj);
 
         if (resp["type"] == "job_request") {
+            if (verbose)
+                ol_log_msg(LOG_INFO, "Scheduler receieved job request.");
+            std::string next_file = get_next_job();
+
+            zmq::message_t response(next_file.size());
+            memcpy((void *)response.data(), next_file.data(), next_file.size());
+
+            socket.send(response);
         } else if (resp["type"] == "job_finished") {
+            if (verbose)
+                ol_log_msg(LOG_INFO, "Scheduler receieved job finished.");
         } else if (resp["type"] == "shutdown") {
             break;
         }
