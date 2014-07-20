@@ -9,6 +9,8 @@
 #define MAINLOOP_URI "ipc://.mainloop.sock"
 #define SCHEDULER_URI "ipc://.scheduler.sock"
 
+#define JOBS_LIST "all_jobs"
+
 extern "C" {
 #include <oleg.h>
 #include <logging.h>
@@ -20,7 +22,7 @@ namespace kyotopantry {
         gatekeeper();
         ~gatekeeper();
 
-        bool queue_file_job(const std::string *path);
+        bool queue_file_job(std::string &path);
         void scheduler();
         void main_loop(bool verbose, int num_workers);
     private:

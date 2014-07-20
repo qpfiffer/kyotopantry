@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 
 
     // Look for any arguments:
-    int i = 1, files_start_at = 1;;
+    int i = 1, files_start_at = 1;
     for (i = 1; i < argc; i++) {
         std::string arg = argv[i];
         if (arg[0] == '-') {
@@ -70,8 +70,12 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (argc < 2 || ((argc-1) - files_start_at <= 0)) {
+    if (argc < 2) {
         ol_log_msg(LOG_ERR, "You need to specify some directories/files to work on.");
+        return 1;
+    }
+    if (files_start_at == argc) {
+        ol_log_msg(LOG_ERR, "You need files to work on in addition to options.");
         return 1;
     }
     ol_log_msg(LOG_INFO, "Starting kyotopantry.");
@@ -81,7 +85,7 @@ int main(int argc, char *argv[]) {
     int files_added = 0;
     mainKeeper = new kyotopantry::gatekeeper();
     for (i = files_start_at; i < argc; i++) {
-        const std::string file_to_add = argv[i];
+        std::string file_to_add = argv[i];
 
         if (!file_exists(file_to_add.c_str())) {
             ol_log_msg(LOG_WARN, "File %s doesn't exist or I can't open it or something.", argv[i]);
@@ -91,7 +95,7 @@ int main(int argc, char *argv[]) {
         if (verbose)
             ol_log_msg(LOG_INFO, "Adding %s to queue...", file_to_add.c_str());
 
-        if (!mainKeeper->queue_file_job(&file_to_add)) {
+        if (!mainKeeper->queue_file_job(file_to_add)) {
             ol_log_msg(LOG_ERR, "Could not add file to queue.");
             return 1;
         }
