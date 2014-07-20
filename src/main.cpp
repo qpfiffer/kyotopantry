@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
         } else {
             // This isn't something that starts with a -. Assume it is a file
             // and move on.
-            files_start_at = i + 1;
+            files_start_at = i;
             break;
         }
     }
