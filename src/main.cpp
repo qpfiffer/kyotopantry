@@ -1,7 +1,9 @@
 #include <csignal>
+#include <fcntl.h>
+#include <msgpack.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+#include <zmq.hpp>
 
 #include <string>
 
@@ -19,7 +21,23 @@ kyotopantry::gatekeeper *mainKeeper = NULL;
 
 void graceful_shutdown(int sig) {
     if (mainKeeper != NULL) {
-        ol_log_msg(LOG_WARN, "Caught SIGINT. Shutting down gracefully.");
+        ol_log_msg(LOG_INFO, "Caught SIGINT. Shutting down gracefully.");
+
+        zmq::context_t context(2);
+        zmq::socket_t socket(context, ZMQ_REQ);
+        socket.connect(SCHEDULER_URI);
+
+        std::map<std::string, std::string> req;
+        req["type"] = "shutdown";
+
+        msgpack::sbuffer *to_send = new msgpack::sbuffer;
+        msgpack::pack(to_send, req);
+
+        zmq::message_t response(to_send->size());
+        memcpy((void *)response.data(), to_send->data(), to_send->size());
+        socket.send(response);
+
+        // We'll thread.join in the destructor:
         delete mainKeeper;
     }
     exit(0);
@@ -83,7 +101,7 @@ int main(int argc, char *argv[]) {
 
     // Process files:
     int files_added = 0;
-    mainKeeper = new kyotopantry::gatekeeper();
+    mainKeeper = new kyotopantry::gatekeeper(verbose);
     for (i = files_start_at; i < argc; i++) {
         std::string file_to_add = argv[i];
 

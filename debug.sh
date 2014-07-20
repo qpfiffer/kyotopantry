@@ -16,4 +16,5 @@ echo 'test5' > $DDIRECTORY/test5
 
 tar -czf $DDIRECTORY/tarball_b.tar.gz $DDIRECTORY/test*
 
-gdb --args ./kyotopantry $DDIRECTORY./tarball_*.tar.gz
+#gdb --args ./kyotopantry $DDIRECTORY./tarball_*.tar.gz
+./kyotopantry -v $DDIRECTORY./tarball_*.tar.gz

@@ -19,13 +19,14 @@ extern "C" {
 namespace kyotopantry {
     class gatekeeper {
     public:
-        gatekeeper();
+        gatekeeper(bool verbose);
         ~gatekeeper();
 
         bool queue_file_job(std::string &path);
         void scheduler();
         void main_loop(bool verbose, int num_workers);
     private:
+        bool verbose;
         ol_database *jobs_db;
         std::thread scheduler_thread;
     };

@@ -6,8 +6,9 @@
 
 using namespace kyotopantry;
 
-gatekeeper::gatekeeper() {
-    jobs_db = ol_open(".kyotopantry/", "jobs", OL_F_APPENDONLY | OL_F_SPLAYTREE);
+gatekeeper::gatekeeper(bool verbose) {
+    this->verbose = verbose;
+    jobs_db = ol_open(".kyotopantry/", "jobs", OL_F_SPLAYTREE);
 
     if (jobs_db == NULL) {
         throw GK_FAILED_TO_OPEN;
@@ -26,8 +27,8 @@ gatekeeper::gatekeeper() {
 }
 
 gatekeeper::~gatekeeper() {
-    ol_close(jobs_db);
     scheduler_thread.join();
+    ol_close(jobs_db);
 }
 
 bool gatekeeper::queue_file_job(std::string &path) {
@@ -61,14 +62,16 @@ bool gatekeeper::queue_file_job(std::string &path) {
 void gatekeeper::scheduler() {
     zmq::context_t context(2);
     zmq::socket_t socket(context, ZMQ_REP);
-    zmq::socket_t main_loop_socket(context, ZMQ_REP);
+    zmq::socket_t main_loop_socket(context, ZMQ_REQ);
     socket.bind(SCHEDULER_URI);
-    main_loop_socket.bind(MAINLOOP_URI);
+    main_loop_socket.connect(MAINLOOP_URI);
 
     // Process job requests from pikemen:
     while(true) {
         std::map<std::string, std::string> resp;
         zmq::message_t request;
+        if (verbose)
+            ol_log_msg(LOG_INFO, "Scheduler waiting.");
         assert(socket.recv(&request) == true);
 
         msgpack::object obj;
@@ -82,13 +85,9 @@ void gatekeeper::scheduler() {
 
         if (resp["type"] == "job_request") {
         } else if (resp["type"] == "job_finished") {
+        } else if (resp["type"] == "shutdown") {
+            break;
         }
-        main_loop_socket.send(request);
-        zmq::message_t request_2;
-        assert(main_loop_socket.recv(&request_2) == true);
-
-        // Send the response from the scheduler back to python
-        socket.send(request_2);
     }
 }
 
@@ -98,9 +97,7 @@ void gatekeeper::main_loop(bool verbose, int num_workers) {
     // Prepare ZMQ stuff
     zmq::context_t context(2);
     zmq::socket_t socket(context, ZMQ_REP);
-    zmq::socket_t scheduler_socket(context, ZMQ_REQ);
     socket.bind(MAINLOOP_URI);
-    scheduler_socket.bind(MAINLOOP_URI);
 
     // Spin up Pikemen
     kyotopantry::pikeman *pikemen[num_workers];
@@ -110,24 +107,23 @@ void gatekeeper::main_loop(bool verbose, int num_workers) {
     }
 
     // Wait for the scheduler to tell us that the job is done
-    while(true) {
-        std::map<std::string, std::string> resp;
+    std::map<std::string, std::string> resp;
 
-        // Receive from whoever
-        zmq::message_t request;
-        assert(socket.recv(&request) == true);
+    // Receive from whoever
+    zmq::message_t request;
+    if (verbose)
+        ol_log_msg(LOG_INFO, "Main loop waiting.");
+    assert(socket.recv(&request) == true);
 
-        msgpack::object obj;
-        msgpack::unpacked unpacked;
+    msgpack::object obj;
+    msgpack::unpacked unpacked;
 
-        // Unpack and convert
-        msgpack::unpack(&unpacked, (char *)request.data(), request.size());
-        obj = unpacked.get();
-        obj.convert(&resp);
+    // Unpack and convert
+    msgpack::unpack(&unpacked, (char *)request.data(), request.size());
+    obj = unpacked.get();
+    obj.convert(&resp);
 
-        ol_log_msg(LOG_INFO, "Main loop receieved: %s", obj);
-        break;
-    }
+    ol_log_msg(LOG_INFO, "Main loop receieved: %s", obj);
 
     for (i = 0; i < num_workers; i++) {
         kyotopantry::pikeman *recruit = pikemen[i];
