@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
 
 
     // Look for any arguments:
-    int i = 1, files_start_at = 1;
+    int i = 1, files_start_at = -1;
     for (i = 1; i < argc; i++) {
         std::string arg = argv[i];
         if (arg[0] == '-') {
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
         ol_log_msg(LOG_ERR, "You need to specify some directories/files to work on.");
         return 1;
     }
-    if (files_start_at == argc) {
+    if ((files_start_at + 1) == argc || files_start_at == -1) {
         ol_log_msg(LOG_ERR, "You need files to work on in addition to options.");
         return 1;
     }
