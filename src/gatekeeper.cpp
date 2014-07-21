@@ -1,6 +1,6 @@
 #include <msgpack.hpp>
-#include <zmq.hpp>
 #include <thread>
+#include <zmq.hpp>
 #include "gatekeeper.h"
 #include "pikeman.h"
 
@@ -14,7 +14,7 @@ gatekeeper::gatekeeper(bool verbose) {
         throw GK_FAILED_TO_OPEN;
     }
 
-    std::vector<std::string> jobs_list;
+    JobsList jobs_list;
 
     msgpack::sbuffer *to_save = new msgpack::sbuffer;
     msgpack::pack(to_save, jobs_list);
@@ -31,7 +31,7 @@ gatekeeper::~gatekeeper() {
     ol_close(jobs_db);
 }
 
-void gatekeeper::get_jobs_from_db(std::vector<std::string> *jobs_list) {
+void gatekeeper::get_jobs_from_db(JobsList *jobs_list) {
     size_t datasize;
     unsigned char *job_results = NULL;
     // Pull jobs from db
@@ -47,26 +47,54 @@ void gatekeeper::get_jobs_from_db(std::vector<std::string> *jobs_list) {
     free(job_results);
 }
 
+bool gatekeeper::set_job_list(JobsList *jobs_list) {
+    // Save jobs back to db
+    msgpack::sbuffer *to_save = new msgpack::sbuffer;
+    msgpack::pack(to_save, *jobs_list);
+
+    int ret = ol_jar(jobs_db, JOBS_LIST, strlen(JOBS_LIST), (unsigned char *)to_save->data(), to_save->size());
+    if (ret == 0)
+        return true;
+    return false;
+}
+
 bool gatekeeper::queue_file_job(std::string &path) {
-    std::vector<std::string> jobs_list;
+    JobsList jobs_list;
     get_jobs_from_db(&jobs_list);
 
     // Actually add it to the thing in the DB
-    jobs_list.push_back(path);
+    if (verbose)
+        ol_log_msg(LOG_INFO, "Saving job %s", path.c_str());
+    jobs_list.push_back(std::make_pair(false, path));
 
-    // Save jobs back to db
-    msgpack::sbuffer *to_save = new msgpack::sbuffer;
-    msgpack::pack(to_save, jobs_list);
-
-    int ret = ol_jar(jobs_db, JOBS_LIST, strlen(JOBS_LIST), (unsigned char *)to_save->data(), to_save->size());
-    assert(ret == 0);
-
-    return true;
+    return set_job_list(&jobs_list);
 }
 
 std::string gatekeeper::get_next_job() {
-    std::vector<std::string> jobs_list;
+    JobsList jobs_list;
     get_jobs_from_db(&jobs_list);
+
+    auto it = jobs_list.begin();
+    bool found_job = false;
+    std::pair<bool, std::string> job;
+    for (;it != jobs_list.end(); it++) {
+        job = *it;
+
+        if (job.first == false) {
+            found_job = true;
+            if (verbose)
+                ol_log_msg(LOG_INFO, "Found job %s", job.second.c_str());
+            break;
+        }
+    }
+
+    if (found_job) {
+        job.first = true;
+        set_job_list(&jobs_list);
+
+        return job.second;
+    }
+
     return "";
 }
 

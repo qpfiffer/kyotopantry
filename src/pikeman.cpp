@@ -43,5 +43,5 @@ void pikeman::do_work() {
     zmq::message_t new_job_resp;
     assert(socket.recv(&new_job_resp) == true);
 
-    ol_log_msg(LOG_INFO, "Thread %i Received job.", this->get_thread_id());
+    ol_log_msg(LOG_INFO, "Thread %i Received job %s.", this->get_thread_id(), new_job_resp.data());
 }
