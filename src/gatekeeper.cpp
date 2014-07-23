@@ -1,3 +1,4 @@
+// vim: noet ts=4 sw=4
 #include <iostream>
 #include <msgpack.hpp>
 #include <thread>

@@ -1,3 +1,4 @@
+// vim: noet ts=4 sw=4
 #include <csignal>
 #include <fcntl.h>
 #include <msgpack.hpp>
