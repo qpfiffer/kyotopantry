@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
 		ol_log_msg(LOG_ERR, "You need to specify some directories/files to work on.");
 		return 1;
 	}
-	if ((files_start_at + 1) == argc || files_start_at == -1) {
+	if (files_start_at == argc || files_start_at == -1) {
 		ol_log_msg(LOG_ERR, "You need files to work on in addition to options.");
 		return 1;
 	}

@@ -36,7 +36,7 @@ namespace kyotopantry {
 		ol_database *jobs_db;
 		std::thread scheduler_thread;
 
-		void get_jobs_from_db(JobsList **jobs_list);
+		void get_jobs_from_db(JobsList *jobs_list);
 		bool set_job_list(JobsList &jobs_list);
 		std::string get_next_job();
 	};
