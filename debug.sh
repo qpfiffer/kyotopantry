@@ -16,5 +16,8 @@ echo 'test5' > $DDIRECTORY/test5
 
 tar -czf $DDIRECTORY/tarball_b.tar.gz $DDIRECTORY/test*
 
-gdb --args ./kyotopantry --verbose -j 4 $DDIRECTORY./tarball_*.tar.gz
+CMD="./kyotopantry --verbose -j 4 $DDIRECTORY./tarball_*.tar.gz"
+
+#gdb --args $CMD
+valgrind --tool=memcheck --suppressions=.valgrind.supp --leak-check=full $CMD
 #./kyotopantry --verbose $DDIRECTORY./tarball_*.tar.gz

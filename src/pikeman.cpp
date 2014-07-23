@@ -45,4 +45,7 @@ void pikeman::do_work() {
 	assert(socket.recv(&new_job_resp) == true);
 
 	ol_log_msg(LOG_INFO, "Thread %i Received job %s.", this->get_thread_id(), new_job_resp.data());
+
+	socket.close();
+	delete request;
 }

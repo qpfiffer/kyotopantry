@@ -26,6 +26,7 @@ gatekeeper::gatekeeper(bool verbose) {
 	assert(ret == 0);
 
 	scheduler_thread = std::thread(&gatekeeper::scheduler, this);
+	delete to_save;
 }
 
 gatekeeper::~gatekeeper() {
@@ -182,4 +183,6 @@ void gatekeeper::main_loop(bool verbose, int num_workers) {
 		kyotopantry::pikeman *recruit = pikemen[i];
 		delete recruit;
 	}
+	socket.close();
+	zmq_term(context);
 }

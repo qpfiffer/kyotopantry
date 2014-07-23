@@ -40,6 +40,7 @@ void graceful_shutdown(int sig) {
 
 		// We'll thread.join in the destructor:
 		delete mainKeeper;
+		delete to_send;
 	}
 	exit(0);
 }
@@ -131,6 +132,7 @@ int main(int argc, char *argv[]) {
 
 	// Actually do the processing:
 	mainKeeper->main_loop(verbose, num_workers);
+	delete mainKeeper;
 
 	return 0;
 }
