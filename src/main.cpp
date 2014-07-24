@@ -72,31 +72,12 @@ void main_loop(bool verbose, int num_workers) {
 		pikemen[i] = new_recruit;
 	}
 
-	// Wait for the scheduler to tell us that the job is done
-	std::map<std::string, std::string> resp;
-
-	// Receive from whoever
-	zmq::message_t request;
-	if (verbose)
-		ol_log_msg(LOG_INFO, "Main loop waiting.");
-	assert(lsocket.recv(&request) == true);
-
-	msgpack::object obj;
-	msgpack::unpacked unpacked;
-
-	// Unpack and convert
-	msgpack::unpack(&unpacked, (char *)request.data(), request.size());
-	obj = unpacked.get();
-	obj.convert(&resp);
-
-	ol_log_msg(LOG_INFO, "Main loop receieved: %s", obj);
+	mainKeeper->spin();
 
 	for (i = 0; i < num_workers; i++) {
 		kyotopantry::pikeman *recruit = pikemen[i];
 		delete recruit;
 	}
-	lsocket.close();
-	zmq_term(lcontext);
 }
 
 int main(int argc, char *argv[]) {

@@ -34,6 +34,7 @@ namespace kyotopantry {
 		bool queue_file_job(std::string &path);
 		void scheduler();
 		void main_loop(bool verbose, int num_workers);
+		void spin();
 	private:
 		// Communication with other procs
 		zmq::context_t *context;

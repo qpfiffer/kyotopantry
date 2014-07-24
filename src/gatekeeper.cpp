@@ -34,7 +34,12 @@ gatekeeper::gatekeeper(bool verbose, int num_workers) {
 }
 
 gatekeeper::~gatekeeper() {
-	scheduler_thread.join();
+	try {
+		scheduler_thread.join();
+	} catch (std::system_error) {
+		// Somebody already joined this thread. Asshole.
+	}
+
 	ol_close(jobs_db);
 
 	delete socket;
@@ -111,6 +116,10 @@ std::string gatekeeper::get_next_job() {
 	return "";
 }
 
+void gatekeeper::spin() {
+	scheduler_thread.join();
+}
+
 void gatekeeper::scheduler() {
 	//zmq::socket_t main_loop_socket(*context, ZMQ_REQ);
 	//main_loop_socket.connect(MAINLOOP_URI);
@@ -153,6 +162,11 @@ void gatekeeper::scheduler() {
 			zmq::message_t response((void *)ok.data(), ok.size(), NULL);
 			socket->send(response);
 
+			num_workers--;
+			if (num_workers <= 0) {
+				ol_log_msg(LOG_ERR, "No more workers. Shutting down.");
+				break;
+			}
 		} else if (resp["type"] == "shutdown") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler received shutdown request.");
