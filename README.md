@@ -36,7 +36,7 @@ vault marks down that block and it's position.
 
 Once a Pikeman finishes indexing the file, it tells the gatekeeper and asks for
 the next job. The gatekeeper will refuse to give out deduplication jobs until
-all current files have been indexed, the ensures that all blocks have been seen
+all current files have been indexed, this ensures that all blocks have been seen
 and hashed and exist in the Vault's block database.
 
 Once all files have been marked as indexed (or errored out and removed from the
