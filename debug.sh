@@ -18,10 +18,14 @@ tar -czf $DDIRECTORY/tarball_b.tar.gz $DDIRECTORY/test*
 
 CMD="./kyotopantry --verbose -j 4 $DDIRECTORY./tarball_*.tar.gz"
 
-if [ $1 == "gdb" ]; then
-    gdb --args $CMD
-elif [ $1 == "valgrind" ]; then
-    valgrind --tool=memcheck --suppressions=.valgrind.supp --leak-check=full $CMD
-else
+if [ $# -eq 0 ]; then
     $CMD
+else
+    if [ $1 == "gdb" ]; then
+        gdb --args $CMD
+    elif [ $1 == "valgrind" ]; then
+        valgrind --tool=memcheck --suppressions=.valgrind.supp --leak-check=full $CMD
+    else
+        $CMD
+    fi
 fi
