@@ -51,8 +51,8 @@ bool pikeman::request_job() {
 		return false;
 	}
 
-	ol_log_msg(LOG_INFO, "Thread %i Received job %s.", this->get_thread_id(), new_job_resp.data());
-	this->current_file = std::string((char *)new_job_resp.data());
+	this->current_file = std::string(static_cast<char *>(new_job_resp.data()), new_job_resp.size());
+	ol_log_msg(LOG_INFO, "Thread %i Received job %s.", this->get_thread_id(), this->current_file.c_str());
 
 	return true;
 }
