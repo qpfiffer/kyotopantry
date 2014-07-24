@@ -1,5 +1,7 @@
 // vim: noet ts=4 sw=4
 #include <csignal>
+#include <cstdlib>
+#include <ctime>
 #include <fcntl.h>
 #include <msgpack.hpp>
 #include <sys/types.h>
@@ -79,6 +81,7 @@ void main_loop(bool verbose, int num_workers) {
 }
 
 int main(int argc, char *argv[]) {
+	srand(time(NULL));
 	signal(SIGINT, graceful_shutdown);
 
 	// Argument defaults:
