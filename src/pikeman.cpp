@@ -76,6 +76,7 @@ pikeman::pikeman() {
 }
 
 pikeman::~pikeman() {
+	munmap(current_file, current_file_size);
 	worker_thread.join();
 
 	delete socket;
