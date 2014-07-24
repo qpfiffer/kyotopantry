@@ -9,6 +9,10 @@
 using namespace kyotopantry;
 
 gatekeeper::gatekeeper(bool verbose) {
+	this->context = new zmq::context_t(1);
+	this->socket = new zmq::socket_t(*context, ZMQ_REP);
+	socket->bind(SCHEDULER_URI);
+
 	this->verbose = verbose;
 	jobs_db = ol_open(".kyotopantry/", "jobs", OL_F_SPLAYTREE | OL_F_LZ4);
 
@@ -25,13 +29,16 @@ gatekeeper::gatekeeper(bool verbose) {
 	int ret = ol_jar(jobs_db, JOBS_LIST, strlen(JOBS_LIST), (unsigned char *)to_save->data(), to_save->size());
 	assert(ret == 0);
 
-	scheduler_thread = std::thread(&gatekeeper::scheduler, this);
 	delete to_save;
+	scheduler_thread = std::thread(&gatekeeper::scheduler, this);
 }
 
 gatekeeper::~gatekeeper() {
 	scheduler_thread.join();
 	ol_close(jobs_db);
+
+	delete socket;
+	delete context;
 }
 
 void gatekeeper::get_jobs_from_db(JobsList *jobs_list) {
@@ -105,19 +112,16 @@ std::string gatekeeper::get_next_job() {
 }
 
 void gatekeeper::scheduler() {
-	zmq::context_t context(2);
-	zmq::socket_t socket(context, ZMQ_REP);
-	zmq::socket_t main_loop_socket(context, ZMQ_REQ);
-	socket.bind(SCHEDULER_URI);
-	main_loop_socket.connect(MAINLOOP_URI);
+	//zmq::socket_t main_loop_socket(*context, ZMQ_REQ);
+	//main_loop_socket.connect(MAINLOOP_URI);
 
 	// Process job requests from pikemen:
-	while(true) {
+	while (true) {
 		std::map<std::string, std::string> resp;
 		zmq::message_t request;
 		if (verbose)
 			ol_log_msg(LOG_INFO, "Scheduler waiting.");
-		assert(socket.recv(&request) == true);
+		assert(socket->recv(&request) == true);
 
 		msgpack::object obj;
 		msgpack::unpacked unpacked;
@@ -135,11 +139,13 @@ void gatekeeper::scheduler() {
 			zmq::message_t response(next_file.size());
 			memcpy((void *)response.data(), next_file.data(), next_file.size());
 
-			socket.send(response);
+			socket->send(response);
 		} else if (resp["type"] == "job_finished") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved job finished.");
 		} else if (resp["type"] == "shutdown") {
+			if (verbose)
+				ol_log_msg(LOG_INFO, "scheduler received shutdown request.");
 			break;
 		}
 	}
@@ -149,9 +155,9 @@ void gatekeeper::main_loop(bool verbose, int num_workers) {
 	int i;
 
 	// Prepare ZMQ stuff
-	zmq::context_t context(2);
-	zmq::socket_t socket(context, ZMQ_REP);
-	socket.bind(MAINLOOP_URI);
+	zmq::context_t lcontext(1);
+	zmq::socket_t lsocket(lcontext, ZMQ_REP);
+	lsocket.bind(MAINLOOP_URI);
 
 	// Spin up Pikemen
 	kyotopantry::pikeman *pikemen[num_workers];
@@ -167,7 +173,7 @@ void gatekeeper::main_loop(bool verbose, int num_workers) {
 	zmq::message_t request;
 	if (verbose)
 		ol_log_msg(LOG_INFO, "Main loop waiting.");
-	assert(socket.recv(&request) == true);
+	assert(lsocket.recv(&request) == true);
 
 	msgpack::object obj;
 	msgpack::unpacked unpacked;
@@ -183,6 +189,6 @@ void gatekeeper::main_loop(bool verbose, int num_workers) {
 		kyotopantry::pikeman *recruit = pikemen[i];
 		delete recruit;
 	}
-	socket.close();
-	zmq_term(context);
+	lsocket.close();
+	zmq_term(lcontext);
 }

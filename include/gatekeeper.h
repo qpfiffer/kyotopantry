@@ -33,8 +33,15 @@ namespace kyotopantry {
 		void scheduler();
 		void main_loop(bool verbose, int num_workers);
 	private:
+		// Communication with other procs
+		zmq::context_t *context;
+		zmq::socket_t *socket;
+
+		// Verbosity on/off
 		bool verbose;
+		// Handle to where we store databases
 		ol_database *jobs_db;
+		// Main thread
 		std::thread scheduler_thread;
 
 		void get_jobs_from_db(JobsList *jobs_list);
