@@ -11,6 +11,10 @@ namespace kyotopantry {
 
 		void do_work();
 	private:
+		zmq::context_t *context;
+		zmq::socket_t *socket;
+
+		void request_job();
 		int get_thread_id();
 		std::thread worker_thread;
 	};
