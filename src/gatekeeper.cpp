@@ -102,7 +102,7 @@ std::string gatekeeper::get_next_job() {
 	}
 
 	if (found_job) {
-		job.first = true;
+		it->first = true;
 		set_job_list(jobs_list);
 
 		return job.second;
