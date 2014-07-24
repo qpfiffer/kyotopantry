@@ -77,6 +77,11 @@ void pikeman::do_work() {
 	socket->connect(SCHEDULER_URI);
 	while (request_job()) {
 		// Do some goddamn WORK bro
+		// 1. mmap() file into memory
+		// 2. Scan through 4k chunks at a time
+		// 3. Ask the database if there exists a chunk with that hash
+		// 4. ???????
+		// 5. File is deduplicated!
 	}
 
 	send_shutdown();
