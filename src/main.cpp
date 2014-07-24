@@ -31,16 +31,15 @@ void graceful_shutdown(int sig) {
 		std::map<std::string, std::string> req;
 		req["type"] = "shutdown";
 
-		msgpack::sbuffer *to_send = new msgpack::sbuffer;
-		msgpack::pack(to_send, req);
+		msgpack::sbuffer to_send;
+		msgpack::pack(&to_send, req);
 
-		zmq::message_t response(to_send->size());
-		memcpy((void *)response.data(), to_send->data(), to_send->size());
+		zmq::message_t response(to_send.size());
+		memcpy((void *)response.data(), to_send.data(), to_send.size());
 		socket.send(response);
 
 		// We'll thread.join in the destructor:
 		delete mainKeeper;
-		delete to_send;
 	}
 	exit(0);
 }

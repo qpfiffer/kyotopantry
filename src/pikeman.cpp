@@ -33,11 +33,11 @@ bool pikeman::request_job() {
 	SchedulerMessage job_request;
 	job_request["type"] = "job_request";
 
-	msgpack::sbuffer *request = new msgpack::sbuffer;
-	msgpack::pack(request, job_request);
+	msgpack::sbuffer request;
+	msgpack::pack(&request, job_request);
 
-	zmq::message_t zrequest(request->size());
-	memcpy((void *)zrequest.data(), request->data(), request->size());
+	zmq::message_t zrequest(request.size());
+	memcpy((void *)zrequest.data(), request.data(), request.size());
 	ol_log_msg(LOG_INFO, "Thread %i Sending request for job.", this->get_thread_id());
 	socket->send(zrequest);
 
@@ -45,19 +45,30 @@ bool pikeman::request_job() {
 	assert(socket->recv(&new_job_resp) == true);
 
 	if (new_job_resp.size() == 0) {
-		ol_log_msg(LOG_WARN, "Thread %i Received no job shutting down.", this->get_thread_id());
+		ol_log_msg(LOG_WARN, "Thread %i Received no job. Shutting down.", this->get_thread_id());
 
-		delete request;
 		return false;
 	}
 
 	ol_log_msg(LOG_INFO, "Thread %i Received job %s.", this->get_thread_id(), new_job_resp.data());
 
-	delete request;
 	return true;
 }
 
 void pikeman::send_shutdown() {
+	SchedulerMessage job_request;
+	job_request["type"] = "worker_end";
+
+	msgpack::sbuffer request;
+	msgpack::pack(&request, job_request);
+
+	zmq::message_t zrequest(request.size());
+	memcpy((void *)zrequest.data(), request.data(), request.size());
+
+	socket->send(zrequest);
+
+	zmq::message_t server_response;
+	assert(socket->recv(&server_response) == true);
 }
 
 void pikeman::do_work() {

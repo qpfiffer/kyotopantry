@@ -23,14 +23,13 @@ gatekeeper::gatekeeper(bool verbose, int num_workers) {
 
 	JobsList jobs_list;
 
-	msgpack::sbuffer *to_save = new msgpack::sbuffer;
-	msgpack::pack(to_save, jobs_list);
+	msgpack::sbuffer to_save;
+	msgpack::pack(&to_save, jobs_list);
 
 	// TODO: See if we have unprocessed jobs.
-	int ret = ol_jar(jobs_db, JOBS_LIST, strlen(JOBS_LIST), (unsigned char *)to_save->data(), to_save->size());
+	int ret = ol_jar(jobs_db, JOBS_LIST, strlen(JOBS_LIST), (unsigned char *)to_save.data(), to_save.size());
 	assert(ret == 0);
 
-	delete to_save;
 	scheduler_thread = std::thread(&gatekeeper::scheduler, this);
 }
 
@@ -141,15 +140,23 @@ void gatekeeper::scheduler() {
 			memcpy((void *)response.data(), next_file.data(), next_file.size());
 
 			socket->send(response);
+
 		} else if (resp["type"] == "job_finished") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved job finished.");
+
 		} else if (resp["type"] == "worker_end") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved worker shutdown.");
+
+			std::string ok = "ok";
+			zmq::message_t response((void *)ok.data(), ok.size(), NULL);
+			socket->send(response);
+
 		} else if (resp["type"] == "shutdown") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler received shutdown request.");
+
 			break;
 		}
 	}
