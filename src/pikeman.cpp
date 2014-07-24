@@ -29,15 +29,8 @@ int pikeman::get_thread_id() {
 	return stoi(s.str().substr(6));
 }
 
-void pikeman::request_job() {
-}
-
-void pikeman::do_work() {
-	ol_log_msg(LOG_INFO, "Thread %i Doing some work.", this->get_thread_id());
-
-	socket->connect(SCHEDULER_URI);
-
-	std::map<std::string, std::string> job_request;
+bool pikeman::request_job() {
+	SchedulerMessage job_request;
 	job_request["type"] = "job_request";
 
 	msgpack::sbuffer *request = new msgpack::sbuffer;
@@ -52,9 +45,28 @@ void pikeman::do_work() {
 	assert(socket->recv(&new_job_resp) == true);
 
 	if (new_job_resp.size() == 0) {
-		ol_log_msg(LOG_WARN, "Thread %i Received no job.", this->get_thread_id());
-	} else {
-		ol_log_msg(LOG_INFO, "Thread %i Received job %s.", this->get_thread_id(), new_job_resp.data());
+		ol_log_msg(LOG_WARN, "Thread %i Received no job shutting down.", this->get_thread_id());
+
+		delete request;
+		return false;
 	}
+
+	ol_log_msg(LOG_INFO, "Thread %i Received job %s.", this->get_thread_id(), new_job_resp.data());
+
 	delete request;
+	return true;
+}
+
+void pikeman::send_shutdown() {
+}
+
+void pikeman::do_work() {
+	ol_log_msg(LOG_INFO, "Thread %i Doing some work.", this->get_thread_id());
+
+	socket->connect(SCHEDULER_URI);
+	while (request_job()) {
+		// Do some goddamn WORK bro
+	}
+
+	send_shutdown();
 }

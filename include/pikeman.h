@@ -14,7 +14,11 @@ namespace kyotopantry {
 		zmq::context_t *context;
 		zmq::socket_t *socket;
 
-		void request_job();
+		// Call this when we want to notify the scheduler that we're done
+		void send_shutdown();
+		// Get a job from the scheduler
+		bool request_job();
+		// Gets an int representation of this thread's ID
 		int get_thread_id();
 		std::thread worker_thread;
 	};

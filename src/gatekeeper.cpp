@@ -8,12 +8,13 @@
 
 using namespace kyotopantry;
 
-gatekeeper::gatekeeper(bool verbose) {
+gatekeeper::gatekeeper(bool verbose, int num_workers) {
 	this->context = new zmq::context_t(1);
 	this->socket = new zmq::socket_t(*context, ZMQ_REP);
 	socket->bind(SCHEDULER_URI);
 
 	this->verbose = verbose;
+	this->num_workers = num_workers;
 	jobs_db = ol_open(".kyotopantry/", "jobs", OL_F_SPLAYTREE | OL_F_LZ4);
 
 	if (jobs_db == NULL) {
@@ -117,7 +118,7 @@ void gatekeeper::scheduler() {
 
 	// Process job requests from pikemen:
 	while (true) {
-		std::map<std::string, std::string> resp;
+		SchedulerMessage resp;
 		zmq::message_t request;
 		if (verbose)
 			ol_log_msg(LOG_INFO, "Scheduler waiting.");
@@ -143,52 +144,13 @@ void gatekeeper::scheduler() {
 		} else if (resp["type"] == "job_finished") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved job finished.");
+		} else if (resp["type"] == "worker_end") {
+			if (verbose)
+				ol_log_msg(LOG_INFO, "Scheduler receieved worker shutdown.");
 		} else if (resp["type"] == "shutdown") {
 			if (verbose)
-				ol_log_msg(LOG_INFO, "scheduler received shutdown request.");
+				ol_log_msg(LOG_INFO, "Scheduler received shutdown request.");
 			break;
 		}
 	}
-}
-
-void gatekeeper::main_loop(bool verbose, int num_workers) {
-	int i;
-
-	// Prepare ZMQ stuff
-	zmq::context_t lcontext(1);
-	zmq::socket_t lsocket(lcontext, ZMQ_REP);
-	lsocket.bind(MAINLOOP_URI);
-
-	// Spin up Pikemen
-	kyotopantry::pikeman *pikemen[num_workers];
-	for (i = 0; i < num_workers; i++) {
-		kyotopantry::pikeman *new_recruit = new kyotopantry::pikeman();
-		pikemen[i] = new_recruit;
-	}
-
-	// Wait for the scheduler to tell us that the job is done
-	std::map<std::string, std::string> resp;
-
-	// Receive from whoever
-	zmq::message_t request;
-	if (verbose)
-		ol_log_msg(LOG_INFO, "Main loop waiting.");
-	assert(lsocket.recv(&request) == true);
-
-	msgpack::object obj;
-	msgpack::unpacked unpacked;
-
-	// Unpack and convert
-	msgpack::unpack(&unpacked, (char *)request.data(), request.size());
-	obj = unpacked.get();
-	obj.convert(&resp);
-
-	ol_log_msg(LOG_INFO, "Main loop receieved: %s", obj);
-
-	for (i = 0; i < num_workers; i++) {
-		kyotopantry::pikeman *recruit = pikemen[i];
-		delete recruit;
-	}
-	lsocket.close();
-	zmq_term(lcontext);
 }

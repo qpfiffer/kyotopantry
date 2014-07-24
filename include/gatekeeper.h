@@ -23,10 +23,12 @@ namespace kyotopantry {
 	// on.
 	typedef std::pair<bool, std::string> Job;
 	typedef std::vector<Job> JobsList;
+	// Messages that the scheduler expects to receieve:
+	typedef std::map<std::string, std::string> SchedulerMessage;
 
 	class gatekeeper {
 	public:
-		gatekeeper(bool verbose);
+		gatekeeper(bool verbose, int num_workers);
 		~gatekeeper();
 
 		bool queue_file_job(std::string &path);
@@ -39,6 +41,8 @@ namespace kyotopantry {
 
 		// Verbosity on/off
 		bool verbose;
+		// How many workers we're running with
+		int num_workers;
 		// Handle to where we store databases
 		ol_database *jobs_db;
 		// Main thread

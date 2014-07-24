@@ -58,9 +58,52 @@ bool file_exists(const char *path) {
 	return true;
 }
 
+void main_loop(bool verbose, int num_workers) {
+	int i;
+
+	// Prepare ZMQ stuff
+	zmq::context_t lcontext(1);
+	zmq::socket_t lsocket(lcontext, ZMQ_REP);
+	lsocket.bind(MAINLOOP_URI);
+
+	// Spin up Pikemen
+	kyotopantry::pikeman *pikemen[num_workers];
+	for (i = 0; i < num_workers; i++) {
+		kyotopantry::pikeman *new_recruit = new kyotopantry::pikeman();
+		pikemen[i] = new_recruit;
+	}
+
+	// Wait for the scheduler to tell us that the job is done
+	std::map<std::string, std::string> resp;
+
+	// Receive from whoever
+	zmq::message_t request;
+	if (verbose)
+		ol_log_msg(LOG_INFO, "Main loop waiting.");
+	assert(lsocket.recv(&request) == true);
+
+	msgpack::object obj;
+	msgpack::unpacked unpacked;
+
+	// Unpack and convert
+	msgpack::unpack(&unpacked, (char *)request.data(), request.size());
+	obj = unpacked.get();
+	obj.convert(&resp);
+
+	ol_log_msg(LOG_INFO, "Main loop receieved: %s", obj);
+
+	for (i = 0; i < num_workers; i++) {
+		kyotopantry::pikeman *recruit = pikemen[i];
+		delete recruit;
+	}
+	lsocket.close();
+	zmq_term(lcontext);
+}
+
 int main(int argc, char *argv[]) {
 	signal(SIGINT, graceful_shutdown);
 
+	// Argument defaults:
 	bool verbose = false;
 	int num_workers = 1;
 
@@ -103,7 +146,7 @@ int main(int argc, char *argv[]) {
 
 	// Process files:
 	int files_added = 0;
-	mainKeeper = new kyotopantry::gatekeeper(verbose);
+	mainKeeper = new kyotopantry::gatekeeper(verbose, num_workers);
 	for (i = files_start_at; i < argc; i++) {
 		std::string file_to_add = argv[i];
 
@@ -131,7 +174,7 @@ int main(int argc, char *argv[]) {
 		ol_log_msg(LOG_INFO, "Processing %i files...", files_added);
 
 	// Actually do the processing:
-	mainKeeper->main_loop(verbose, num_workers);
+	main_loop(verbose, num_workers);
 	delete mainKeeper;
 
 	return 0;
