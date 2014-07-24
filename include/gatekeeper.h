@@ -21,7 +21,8 @@ namespace kyotopantry {
 	// The job list is a list of tuples {<being processed>, <file path>}. Each
 	// tuple is initialized to false, and set to true when it is being worked
 	// on.
-	typedef std::vector<std::pair<bool, std::string>> JobsList;
+	typedef std::pair<bool, std::string> Job;
+	typedef std::vector<Job> JobsList;
 
 	class gatekeeper {
 	public:

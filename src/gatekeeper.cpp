@@ -70,7 +70,7 @@ bool gatekeeper::queue_file_job(std::string &path) {
 	// Actually add it to the thing in the DB
 	if (verbose)
 		ol_log_msg(LOG_INFO, "Saving job %s", path.c_str());
-	std::pair<bool, std::string> new_pair = std::make_pair(false, path);
+	Job new_pair = std::make_pair(false, path);
 	jobs_list.push_back(new_pair);
 
 	return set_job_list(jobs_list);
@@ -82,7 +82,7 @@ std::string gatekeeper::get_next_job() {
 
 	auto it = jobs_list.begin();
 	bool found_job = false;
-	std::pair<bool, std::string> job;
+	Job job;
 	for (;it != jobs_list.end(); it++) {
 		job = *it;
 
