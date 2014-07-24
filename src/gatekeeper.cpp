@@ -10,7 +10,7 @@ using namespace kyotopantry;
 
 gatekeeper::gatekeeper(bool verbose) {
 	this->verbose = verbose;
-	jobs_db = ol_open(".kyotopantry/", "jobs", OL_F_SPLAYTREE);
+	jobs_db = ol_open(".kyotopantry/", "jobs", OL_F_SPLAYTREE | OL_F_LZ4);
 
 	if (jobs_db == NULL) {
 		throw GK_FAILED_TO_OPEN;
@@ -46,7 +46,6 @@ void gatekeeper::get_jobs_from_db(JobsList *jobs_list) {
 	msgpack::unpack(&unpacked, (char *)job_results, datasize);
 	obj = unpacked.get();
 
-	std::cout << "Object: " << obj << std::endl;
 	obj.convert(jobs_list);
 
 	free(job_results);
@@ -58,6 +57,7 @@ bool gatekeeper::set_job_list(JobsList &jobs_list) {
 	msgpack::pack(&to_save, jobs_list);
 
 	int ret = ol_jar(jobs_db, JOBS_LIST, strlen(JOBS_LIST), (unsigned char *)to_save.data(), to_save.size());
+
 	if (ret == 0)
 		return true;
 	return false;
