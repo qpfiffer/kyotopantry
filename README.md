@@ -1,6 +1,3 @@
-Install
-=======
-
 KyotoPantry is a userspace file-deduplication program. You give it a list of
 files and it'll index and cache 4k blocks, removing duplicates.
 
@@ -14,7 +11,7 @@ There are four main components to kyotopantry: The Gatekeeper, the Pikemen and
 the Vault.
 
 * Gatekeeper: Responsible for handing out jobs to pikemen
-* Pikement: Responsible for processing files and reporting blocks to the Vault
+* Pikemen: Responsible for processing files and reporting blocks to the Vault
 * The Vault: Responsible for storing blocks and hashes of blocks, whether that
   block has been seen or not, etc.
 
