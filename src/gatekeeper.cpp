@@ -145,9 +145,7 @@ void gatekeeper::scheduler() {
 				ol_log_msg(LOG_INFO, "Scheduler receieved job request.");
 			std::string next_file = get_next_job();
 
-			zmq::message_t response(next_file.size());
-			memcpy((void *)response.data(), next_file.data(), next_file.size());
-
+			zmq::message_t response((void *)next_file.data(), next_file.size(), NULL);
 			socket->send(response);
 
 		} else if (resp["type"] == "job_finished") {

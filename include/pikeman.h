@@ -14,6 +14,8 @@ namespace kyotopantry {
 		zmq::context_t *context;
 		zmq::socket_t *socket;
 
+		std::string current_file;
+
 		// Call this when we want to notify the scheduler that we're done
 		void send_shutdown();
 		// Get a job from the scheduler

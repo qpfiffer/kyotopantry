@@ -2,6 +2,8 @@
 #include <msgpack.hpp>
 #include <zmq.hpp>
 #include <sstream>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "pikeman.h"
 #include "gatekeeper.h"
@@ -36,8 +38,7 @@ bool pikeman::request_job() {
 	msgpack::sbuffer request;
 	msgpack::pack(&request, job_request);
 
-	zmq::message_t zrequest(request.size());
-	memcpy((void *)zrequest.data(), request.data(), request.size());
+	zmq::message_t zrequest((void *)request.data(), request.size(), NULL);
 	ol_log_msg(LOG_INFO, "Thread %i Sending request for job.", this->get_thread_id());
 	socket->send(zrequest);
 
@@ -51,6 +52,7 @@ bool pikeman::request_job() {
 	}
 
 	ol_log_msg(LOG_INFO, "Thread %i Received job %s.", this->get_thread_id(), new_job_resp.data());
+	this->current_file = std::string((char *)new_job_resp.data());
 
 	return true;
 }
@@ -62,8 +64,7 @@ void pikeman::send_shutdown() {
 	msgpack::sbuffer request;
 	msgpack::pack(&request, job_request);
 
-	zmq::message_t zrequest(request.size());
-	memcpy((void *)zrequest.data(), request.data(), request.size());
+	zmq::message_t zrequest((void *)request.data(), request.size(), NULL);
 
 	socket->send(zrequest);
 
@@ -78,6 +79,25 @@ void pikeman::do_work() {
 	while (request_job()) {
 		// Do some goddamn WORK bro
 		// 1. mmap() file into memory
+		struct stat sb = {0};
+		int fd = open(this->current_file.c_str(), O_RDONLY);
+		size_t filesize;
+
+		if (fd <= 0) {
+			ol_log_msg(LOG_WARN, "Thread %i Could not open file %s.", this->get_thread_id(), this->current_file.c_str());
+			errno = 0;
+			continue;
+		}
+
+		if (fstat(fd, &sb) == -1) {
+			ol_log_msg(LOG_WARN, "Thread %i Could not open file %s.", this->get_thread_id(), this->current_file.c_str());
+			errno = 0;
+			continue;
+		}
+		filesize = sb.st_size;
+
+		ol_log_msg(LOG_INFO, "Working on file if size %i.", filesize);
+		close(fd);
 		// 2. Scan through 4k chunks at a time
 		// 3. Ask the database if there exists a chunk with that hash
 		// 4. ???????
