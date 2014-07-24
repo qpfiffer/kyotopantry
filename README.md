@@ -1,6 +1,3 @@
-Install
-=======
-
 KyotoPantry is a userspace file-deduplication program. You give it a list of
 files and it'll index and cache 4k blocks, removing duplicates.
 
