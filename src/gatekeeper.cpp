@@ -117,8 +117,7 @@ std::tuple<bool, std::string> gatekeeper::get_next_index_job() {
 }
 
 std::tuple<bool, std::string> gatekeeper::get_next_dedupe_job() {
-	auto fail = std::make_tuple(false, "");
-	return fail;
+	return std::make_tuple(false, "");
 }
 
 void gatekeeper::spin() {
@@ -178,7 +177,12 @@ void gatekeeper::scheduler() {
 			}
 
 			// No jobs to send.
-			std::string empty = "";
+			SchedulerMessage new_job;
+			new_job["type"] = "no_job";
+
+			msgpack::sbuffer empty;
+			msgpack::pack(&empty, new_job);
+
 			zmq::message_t response((void *)empty.data(), empty.size(), NULL);
 			socket->send(response);
 		} else if (resp["type"] == "job_finished") {
@@ -189,7 +193,12 @@ void gatekeeper::scheduler() {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved worker shutdown.");
 
-			std::string ok = "ok";
+			SchedulerMessage msg;
+			msg["type"] = "ok";
+
+			msgpack::sbuffer ok;
+			msgpack::pack(&ok, msg);
+
 			zmq::message_t response((void *)ok.data(), ok.size(), NULL);
 			socket->send(response);
 

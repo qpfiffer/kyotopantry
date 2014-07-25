@@ -102,7 +102,6 @@ bool pikeman::request_job() {
 
 	if (new_job_resp.size() == 0) {
 		ol_log_msg(LOG_WARN, "%s: Received no job. Shutting down.", thread_name.c_str());
-
 		return false;
 	}
 
@@ -112,8 +111,16 @@ bool pikeman::request_job() {
 	msgpack::unpack(&unpacked, (char *)new_job_resp.data(), new_job_resp.size());
 	obj = unpacked.get();
 
+	msgpack_object_print(stdout, obj);
+	ol_log_msg(LOG_WARN, "Receieved that.");
+
 	SchedulerMessage msg;
 	obj.convert(&msg);
+
+	if (msg["type"] == "no_job") {
+		ol_log_msg(LOG_WARN, "%s: Received no job. Shutting down.", thread_name.c_str());
+		return false;
+	}
 
 	this->current_file_name = msg["path"];
 	ol_log_msg(LOG_INFO, "%s: Received job %s.", thread_name.c_str(), this->current_file_name.c_str());
