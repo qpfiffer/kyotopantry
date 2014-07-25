@@ -149,7 +149,7 @@ bool pikeman::open_job() {
 
 	current_file_size = sb.st_size;
 
-	ol_log_msg(LOG_INFO, "Working on file if size %i.", current_file_size);
+	ol_log_msg(LOG_INFO, "Working on file of size %i.", current_file_size);
 
 	current_file = mmap(NULL, current_file_size, PROT_READ, MAP_SHARED, fd, 0);
 	if (current_file == MAP_FAILED) {
