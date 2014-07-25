@@ -15,7 +15,7 @@ gatekeeper::gatekeeper(bool verbose, int num_workers) {
 
 	this->verbose = verbose;
 	this->num_workers = num_workers;
-	jobs_db = ol_open(".kyotopantry/", "jobs", OL_F_SPLAYTREE | OL_F_LZ4);
+	jobs_db = ol_open(".kyotopantry/", "jobs", OL_F_SPLAYTREE);
 
 	if (jobs_db == NULL) {
 		throw GK_FAILED_TO_OPEN;
