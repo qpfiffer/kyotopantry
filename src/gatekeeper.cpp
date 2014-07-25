@@ -88,7 +88,7 @@ bool gatekeeper::queue_file_job(std::string &path) {
 	return set_job_list(jobs_list);
 }
 
-std::string gatekeeper::get_next_job() {
+std::tuple<bool, std::string> gatekeeper::get_next_index_job() {
 	JobsList jobs_list;
 	get_jobs_from_db(&jobs_list);
 
@@ -110,10 +110,15 @@ std::string gatekeeper::get_next_job() {
 		it->first = true;
 		set_job_list(jobs_list);
 
-		return job.second;
+		return std::make_tuple(true, job.second);
 	}
 
-	return "";
+	return std::make_tuple(false, "");
+}
+
+std::tuple<bool, std::string> gatekeeper::get_next_dedupe_job() {
+	auto fail = std::make_tuple(false, "");
+	return fail;
 }
 
 void gatekeeper::spin() {
@@ -143,11 +148,39 @@ void gatekeeper::scheduler() {
 		if (resp["type"] == "job_request") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved job request.");
-			std::string next_file = get_next_job();
+			std::tuple<bool, std::string> next_file = get_next_index_job();
 
-			zmq::message_t response((void *)next_file.data(), next_file.size(), NULL);
+			if (std::get<0>(next_file)) {
+				SchedulerMessage new_job;
+				new_job["type"] = "index_job";
+				new_job["path"] = std::get<1>(next_file);
+
+				msgpack::sbuffer to_send;
+				msgpack::pack(&to_send, new_job);
+
+				zmq::message_t response((void *)to_send.data(), to_send.size(), NULL);
+				socket->send(response);
+				continue;
+			}
+
+			std::tuple<bool, std::string> next_dedupe_file = get_next_dedupe_job();
+			if (std::get<0>(next_dedupe_file)) {
+				SchedulerMessage new_job;
+				new_job["type"] = "dedupe_job";
+				new_job["path"] = std::get<1>(next_dedupe_file);
+
+				msgpack::sbuffer to_send;
+				msgpack::pack(&to_send, new_job);
+
+				zmq::message_t response((void *)to_send.data(), to_send.size(), NULL);
+				socket->send(response);
+				continue;
+			}
+
+			// No jobs to send.
+			std::string empty = "";
+			zmq::message_t response((void *)empty.data(), empty.size(), NULL);
 			socket->send(response);
-
 		} else if (resp["type"] == "job_finished") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved job finished.");

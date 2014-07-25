@@ -103,6 +103,12 @@ bool pikeman::request_job() {
 		return false;
 	}
 
+	msgpack::object obj;
+	msgpack::unpacked unpacked;
+
+	msgpack::unpack(&unpacked, (char *)new_job_resp.data(), new_job_resp.size());
+	obj = unpacked.get();
+
 	this->current_file_name = std::string(static_cast<char *>(new_job_resp.data()), new_job_resp.size());
 	ol_log_msg(LOG_INFO, "%s: Received job %s.", thread_name.c_str(), this->current_file_name.c_str());
 
