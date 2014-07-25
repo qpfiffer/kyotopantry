@@ -69,6 +69,9 @@ pikeman::pikeman() {
 	this->context = new zmq::context_t(1);
 	this->socket = new zmq::socket_t(*context, ZMQ_REQ);
 
+	this->current_file = NULL;
+	this->current_file_name = "";
+
 	const int moons_of_jupiter_length = sizeof(moons_of_jupiter) / sizeof(char *);
 	this->thread_name = std::string(moons_of_jupiter[rand() % moons_of_jupiter_length]);
 
@@ -109,7 +112,10 @@ bool pikeman::request_job() {
 	msgpack::unpack(&unpacked, (char *)new_job_resp.data(), new_job_resp.size());
 	obj = unpacked.get();
 
-	this->current_file_name = std::string(static_cast<char *>(new_job_resp.data()), new_job_resp.size());
+	SchedulerMessage msg;
+	obj.convert(&msg);
+
+	this->current_file_name = msg["path"];
 	ol_log_msg(LOG_INFO, "%s: Received job %s.", thread_name.c_str(), this->current_file_name.c_str());
 
 	return true;
