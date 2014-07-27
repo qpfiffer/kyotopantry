@@ -1,9 +1,11 @@
 // vim: noet ts=4 sw=4
 #pragma once
 #include <thread>
+#include "jobtypes.h"
 
 // Pikemen are responsible for processing individual files.
 namespace kyotopantry {
+
 	class pikeman {
 	public:
 		pikeman();
@@ -16,9 +18,7 @@ namespace kyotopantry {
 		zmq::context_t *context;
 		zmq::socket_t *socket;
 
-		std::string current_file_name;
-		size_t current_file_size;
-		void *current_file;
+		filejob *current_job;
 
 		// Call this when we want to notify the scheduler that we're done
 		void send_shutdown();

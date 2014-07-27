@@ -14,6 +14,6 @@ clean:
 %.o: ./src/%.cpp
 	$(CC) $(CPPFLAGS) $(INCLUDES) -fpic -c $<
 
-$(NAME): vault.o pikeman.o gatekeeper.o main.o
+$(NAME): vault.o jobtypes.o pikeman.o gatekeeper.o main.o
 	$(CC) $(CPPFLAGS) $(INCLUDES) -o $(NAME) $^ $(LIBOLEG) $(LIBS)
 

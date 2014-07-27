@@ -2,9 +2,6 @@
 #include <msgpack.hpp>
 #include <zmq.hpp>
 #include <sstream>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 
 #include "pikeman.h"
 #include "gatekeeper.h"
@@ -70,9 +67,7 @@ pikeman::pikeman() {
 	this->context = new zmq::context_t(1);
 	this->socket = new zmq::socket_t(*context, ZMQ_REQ);
 
-	this->current_file = NULL;
-	this->current_file_size = 0;
-	this->current_file_name = "";
+	this->current_job = NULL;
 
 	const int moons_of_jupiter_length = sizeof(moons_of_jupiter) / sizeof(char *);
 	this->thread_name = std::string(moons_of_jupiter[rand() % moons_of_jupiter_length]);
@@ -81,14 +76,13 @@ pikeman::pikeman() {
 }
 
 pikeman::~pikeman() {
-	munmap(current_file, current_file_size);
-
 	try {
 		worker_thread.join();
 	} catch (std::system_error) {
 		// Somebody already joined this thread. Asshole.
 	}
 
+	delete current_job;
 	delete socket;
 	delete context;
 }
@@ -128,45 +122,19 @@ bool pikeman::request_job() {
 	if (msg["type"] == "no_job") {
 		ol_log_msg(LOG_WARN, "%s: Received no job. Shutting down.", thread_name.c_str());
 		return false;
+	} else if (msg["type"] == "index_job") {
+		this->current_job = new indexjob(msg["path"]);
+	} else if (msg["type"] == "dedupe_job") {
+		//TODO: This.
+		//this->current_job = new indexjob(msg["path"]);
 	}
 
-	this->current_file_name = msg["path"];
-	ol_log_msg(LOG_INFO, "%s: Received job %s.", thread_name.c_str(), this->current_file_name.c_str());
+	ol_log_msg(LOG_INFO, "%s: Received job %s.", thread_name.c_str(), current_job->get_current_file_name().c_str());
 
 	return true;
 }
 
 bool pikeman::open_job() {
-	struct stat sb = {0};
-	int fd = open(this->current_file_name.c_str(), O_RDONLY);
-
-	if (fd <= 0) {
-		ol_log_msg(LOG_WARN, "%s: Could not open file %s.",
-				thread_name.c_str(), this->current_file_name.c_str());
-		errno = 0;
-		return false;
-	}
-
-	if (fstat(fd, &sb) == -1) {
-		ol_log_msg(LOG_WARN, "%s: Could not open file %s.",
-				thread_name.c_str(), this->current_file_name.c_str());
-		errno = 0;
-		close(fd);
-		return false;
-	}
-
-	current_file_size = sb.st_size;
-
-	ol_log_msg(LOG_INFO, "Working on file of size %i.", current_file_size);
-
-	current_file = mmap(NULL, current_file_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (current_file == MAP_FAILED) {
-		ol_log_msg(LOG_WARN, "Could not mmap file.");
-		close(fd);
-		return false;
-	}
-
-	close(fd);
 	return true;
 }
 
