@@ -66,8 +66,8 @@ static const char *moons_of_jupiter[] = {
 };
 
 pikeman::pikeman() {
-	this->context = NULL;
-	this->socket = NULL;
+	this->context = new zmq::context_t(1);
+	this->socket = new zmq::socket_t(*context, ZMQ_REQ);
 
 	this->current_file = NULL;
 	this->current_file_size = 0;
@@ -186,9 +186,6 @@ void pikeman::send_shutdown() {
 }
 
 void pikeman::do_work() {
-	this->context = new zmq::context_t(1);
-	this->socket = new zmq::socket_t(*context, ZMQ_REQ);
-
 	ol_log_msg(LOG_INFO, "%s: Doing some work.", thread_name.c_str());
 
 	socket->connect(SCHEDULER_URI);
