@@ -162,7 +162,8 @@ void gatekeeper::scheduler() {
 				msgpack::sbuffer to_send;
 				msgpack::pack(&to_send, new_job);
 
-				zmq::message_t response((void *)to_send.data(), to_send.size(), NULL);
+				zmq::message_t response(to_send.size());
+				memcpy(response.data(), to_send.data(), to_send.size());
 				socket->send(response);
 				delete next_file;
 				continue;
@@ -180,7 +181,8 @@ void gatekeeper::scheduler() {
 				msgpack::sbuffer to_send;
 				msgpack::pack(&to_send, new_job);
 
-				zmq::message_t response((void *)to_send.data(), to_send.size(), NULL);
+				zmq::message_t response(to_send.size());
+				memcpy(response.data(), to_send.data(), to_send.size());
 				socket->send(response);
 				delete next_dedupe_file;
 				continue;
@@ -190,12 +192,14 @@ void gatekeeper::scheduler() {
 			// No jobs to send.
 			SchedulerMessage new_job;
 			new_job["type"] = "no_job";
+			new_job["path"] = "AAAAAAAAAAAAA";
 
-			msgpack::sbuffer empty;
-			msgpack::pack(&empty, new_job);
+			msgpack::sbuffer what;
+			msgpack::pack(&what, new_job);
 
-			zmq::message_t response((void *)empty.data(), empty.size(), NULL);
-			socket->send(response);
+			zmq::message_t new_response(what.size());
+			memcpy(new_response.data(), what.data(), what.size());
+			socket->send(new_response);
 		} else if (resp["type"] == "job_finished") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved job finished.");
@@ -210,7 +214,8 @@ void gatekeeper::scheduler() {
 			msgpack::sbuffer ok;
 			msgpack::pack(&ok, msg);
 
-			zmq::message_t response((void *)ok.data(), ok.size(), NULL);
+			zmq::message_t response(ok.size());
+			memcpy(response.data(), ok.data(), ok.size());
 			socket->send(response);
 
 			num_workers--;

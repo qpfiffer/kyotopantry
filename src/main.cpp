@@ -35,7 +35,8 @@ void graceful_shutdown(int sig) {
 		msgpack::sbuffer to_send;
 		msgpack::pack(&to_send, req);
 
-		zmq::message_t response((void *)to_send.data(), to_send.size(), NULL);
+		zmq::message_t response(to_send.size());
+		memcpy(response.data(), to_send.data(), to_send.size());
 		socket.send(response);
 
 		// We'll thread.join in the destructor:

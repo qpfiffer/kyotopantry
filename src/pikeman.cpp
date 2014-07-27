@@ -66,8 +66,8 @@ static const char *moons_of_jupiter[] = {
 };
 
 pikeman::pikeman() {
-	this->context = new zmq::context_t(1);
-	this->socket = new zmq::socket_t(*context, ZMQ_REQ);
+	this->context = NULL;
+	this->socket = NULL;
 
 	this->current_file = NULL;
 	this->current_file_size = 0;
@@ -99,7 +99,8 @@ bool pikeman::request_job() {
 	msgpack::sbuffer request;
 	msgpack::pack(&request, job_request);
 
-	zmq::message_t zrequest((void *)request.data(), request.size(), NULL);
+	zmq::message_t zrequest(request.size());
+	memcpy(zrequest.data(), request.data(), request.size());
 	ol_log_msg(LOG_INFO, "%s: Sending request for job.", thread_name.c_str());
 	socket->send(zrequest);
 
@@ -107,7 +108,7 @@ bool pikeman::request_job() {
 	assert(socket->recv(&new_job_resp) == true);
 
 	if (new_job_resp.size() == 0) {
-		ol_log_msg(LOG_WARN, "%s: Received no job. Shutting down.", thread_name.c_str());
+		ol_log_msg(LOG_WARN, "%s: Received empty job. Shutting down.", thread_name.c_str());
 		return false;
 	}
 
@@ -175,7 +176,8 @@ void pikeman::send_shutdown() {
 	msgpack::sbuffer request;
 	msgpack::pack(&request, job_request);
 
-	zmq::message_t zrequest((void *)request.data(), request.size(), NULL);
+	zmq::message_t zrequest(request.size());
+	memcpy(zrequest.data(), request.data(), request.size());
 
 	socket->send(zrequest);
 
@@ -184,6 +186,9 @@ void pikeman::send_shutdown() {
 }
 
 void pikeman::do_work() {
+	this->context = new zmq::context_t(1);
+	this->socket = new zmq::socket_t(*context, ZMQ_REQ);
+
 	ol_log_msg(LOG_INFO, "%s: Doing some work.", thread_name.c_str());
 
 	socket->connect(SCHEDULER_URI);
