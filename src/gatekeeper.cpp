@@ -88,7 +88,7 @@ bool gatekeeper::queue_file_job(std::string &path) {
 	return set_job_list(jobs_list);
 }
 
-std::pair<bool, std::string> *gatekeeper::get_next_index_job() {
+std::tuple<bool, std::string> gatekeeper::get_next_index_job() {
 	JobsList jobs_list;
 	get_jobs_from_db(&jobs_list);
 
@@ -111,14 +111,14 @@ std::pair<bool, std::string> *gatekeeper::get_next_index_job() {
 		if (verbose)
 			ol_log_msg(LOG_INFO, "Found job %s", job.second.c_str());
 
-		return new std::pair<bool, std::string>(true, job.second);
+		return std::make_tuple(true, job.second);
 	}
 
-	return new std::pair<bool, std::string>(false, "");
+	return std::make_tuple(false, "");
 }
 
-std::tuple<bool, std::string> *gatekeeper::get_next_dedupe_job() {
-	auto to_return = new std::tuple<bool, std::string>(false, "");
+std::tuple<bool, std::string> gatekeeper::get_next_dedupe_job() {
+	auto to_return = std::tuple<bool, std::string>(false, "");
 	return to_return;
 }
 
@@ -149,14 +149,14 @@ void gatekeeper::scheduler() {
 		if (resp["type"] == "job_request") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved job request.");
-			std::pair<bool, std::string> *next_file = get_next_index_job();
+			std::tuple<bool, std::string> next_file = get_next_index_job();
 
-			if (next_file->first) {
+			if (std::get<0>(next_file)) {
 				if (verbose)
 					ol_log_msg(LOG_INFO, "Scheduler sending index job.");
 				SchedulerMessage new_job;
 				new_job["type"] = "index_job";
-				std::string next_path = next_file->second;
+				std::string next_path = std::get<1>(next_file);
 				new_job["path"] = next_path;
 
 				msgpack::sbuffer to_send;
@@ -165,18 +165,16 @@ void gatekeeper::scheduler() {
 				zmq::message_t response(to_send.size());
 				memcpy(response.data(), to_send.data(), to_send.size());
 				socket->send(response);
-				delete next_file;
 				continue;
 			}
 
-			delete next_file;
-			std::tuple<bool, std::string> *next_dedupe_file = get_next_dedupe_job();
-			if (std::get<0>(*next_dedupe_file)) {
+			std::tuple<bool, std::string> next_dedupe_file = get_next_dedupe_job();
+			if (std::get<0>(next_dedupe_file)) {
 				if (verbose)
 					ol_log_msg(LOG_INFO, "Scheduler sending dedupe job.");
 				SchedulerMessage new_job;
 				new_job["type"] = "dedupe_job";
-				new_job["path"] = std::get<1>(*next_dedupe_file);
+				new_job["path"] = std::get<1>(next_dedupe_file);
 
 				msgpack::sbuffer to_send;
 				msgpack::pack(&to_send, new_job);
@@ -184,11 +182,9 @@ void gatekeeper::scheduler() {
 				zmq::message_t response(to_send.size());
 				memcpy(response.data(), to_send.data(), to_send.size());
 				socket->send(response);
-				delete next_dedupe_file;
 				continue;
 			}
 
-			delete next_dedupe_file;
 			// No jobs to send.
 			SchedulerMessage new_job;
 			new_job["type"] = "no_job";

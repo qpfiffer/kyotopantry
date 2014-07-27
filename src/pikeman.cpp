@@ -118,8 +118,8 @@ bool pikeman::request_job() {
 	msgpack::unpack(&unpacked, (char *)new_job_resp.data(), new_job_resp.size());
 	obj = unpacked.get();
 
-	msgpack_object_print(stdout, obj);
-	ol_log_msg(LOG_WARN, "Receieved that.");
+	//msgpack_object_print(stdout, obj);
+	//ol_log_msg(LOG_WARN, "Receieved that.");
 
 	SchedulerMessage msg;
 	obj.convert(&msg);
