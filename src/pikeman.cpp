@@ -57,6 +57,7 @@ static const char *moons_of_jupiter[] = {
 	"Pasithee",
 	"Praxidike",
 	"Sinope",
+	"Spider",
 	"Sponde",
 	"Taygete",
 	"Thebe",
