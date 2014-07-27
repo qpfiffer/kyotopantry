@@ -1,4 +1,4 @@
-CPPFLAGS=-std=c++0x -pthread -Wall -Werror -g3
+CPPFLAGS=-std=c++0x -pthread -Wall -Werror -Wshadow -g3
 INCLUDES=-I./include -I./OlegDB/include
 LIBS=-lzmq -lmsgpack -lm -lstdc++
 NAME=kyotopantry

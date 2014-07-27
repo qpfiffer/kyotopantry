@@ -70,6 +70,7 @@ pikeman::pikeman() {
 	this->socket = new zmq::socket_t(*context, ZMQ_REQ);
 
 	this->current_file = NULL;
+	this->current_file_size = 0;
 	this->current_file_name = "";
 
 	const int moons_of_jupiter_length = sizeof(moons_of_jupiter) / sizeof(char *);
@@ -80,7 +81,12 @@ pikeman::pikeman() {
 
 pikeman::~pikeman() {
 	munmap(current_file, current_file_size);
-	worker_thread.join();
+
+	try {
+		worker_thread.join();
+	} catch (std::system_error) {
+		// Somebody already joined this thread. Asshole.
+	}
 
 	delete socket;
 	delete context;
