@@ -125,8 +125,7 @@ bool pikeman::request_job() {
 	} else if (msg["type"] == "index_job") {
 		this->current_job = new indexjob(msg["path"]);
 	} else if (msg["type"] == "dedupe_job") {
-		//TODO: This.
-		//this->current_job = new indexjob(msg["path"]);
+		this->current_job = new dedupejob(msg["path"]);
 	}
 
 	ol_log_msg(LOG_INFO, "%s: Received job %s.", thread_name.c_str(), current_job->get_current_file_name().c_str());

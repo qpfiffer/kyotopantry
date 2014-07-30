@@ -35,5 +35,5 @@ namespace kyotopantry {
 		~dedupejob();
 	private:
 		bool do_job();
-	}
+	};
 }

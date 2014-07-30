@@ -19,6 +19,9 @@ indexjob::~indexjob() {
 	munmap(current_file, current_file_size);
 }
 
+dedupejob::~dedupejob() {
+}
+
 bool indexjob::do_job() {
 	struct stat sb = {0};
 	int fd = open(this->current_file_name.c_str(), O_RDONLY);
@@ -50,5 +53,9 @@ bool indexjob::do_job() {
 	}
 
 	close(fd);
+    return true;
+}
+
+bool dedupejob::do_job() {
     return true;
 }
