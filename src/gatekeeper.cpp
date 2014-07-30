@@ -145,15 +145,15 @@ Job *gatekeeper::get_next_job() {
 		}
 	}
 
-	if (found_job) {
-		if (found_unfinished_index_job && it->job_type == DEDUPE) {
-			ol_log_msg(LOG_INFO, "Found a dedupe job but we have unfinished index jobs.");
-			Job *new_job = new Job();
-			new_job->job_type = TRY_AGAIN;
-			new_job->job_id = -1;
-			return new_job;
-		}
+	if (found_unfinished_index_job) {
+		ol_log_msg(LOG_INFO, "Found a dedupe job but we have unfinished index jobs.");
+		Job *new_job = new Job();
+		new_job->job_type = TRY_AGAIN;
+		new_job->job_id = -1;
+		return new_job;
+	}
 
+	if (found_job) {
 		it->being_processed = true;
 		set_job_list(jobs_list);
 

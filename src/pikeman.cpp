@@ -127,14 +127,15 @@ bool pikeman::request_job() {
 	delete this->current_job; // Remove the old one.
 	if (msg["type"] == "index_job") {
 		this->current_job = new indexjob(msg["path"], std::stoi(msg["id"]));
+		ol_log_msg(LOG_INFO, "%s: Received index job %s.", thread_name.c_str(), current_job->get_current_file_name().c_str());
 	} else if (msg["type"] == "dedupe_job") {
 		this->current_job = new dedupejob(msg["path"], std::stoi(msg["id"]));
+		ol_log_msg(LOG_INFO, "%s: Received dedupe job %s.", thread_name.c_str(), current_job->get_current_file_name().c_str());
 	} else if (msg["type"] == "try_again") {
 		// This job doesn't really do anything than sit here.
 		this->current_job = new sleepjob("", -1);
+		ol_log_msg(LOG_WARN, "%s: Received sleep job. Sleeping.", thread_name.c_str());
 	}
-
-	ol_log_msg(LOG_INFO, "%s: Received job %s.", thread_name.c_str(), current_job->get_current_file_name().c_str());
 
 	return true;
 }
