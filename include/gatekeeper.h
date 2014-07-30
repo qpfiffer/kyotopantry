@@ -69,9 +69,14 @@ namespace kyotopantry {
 		// Autoincrementing job ID.
 		int job_id_counter;
 
+		// Deserializes the job list from the database
 		void get_jobs_from_db(JobsList *jobs_list);
+		// Sets the job list in the persistent DB
 		bool set_job_list(JobsList &jobs_list);
+		// Gets the next available job:
 		Job *get_next_job();
+		// Generic helper method to respond to workers:
 		void send_ok_response();
+		bool mark_job_as_done(const int job_id);
 	};
 }

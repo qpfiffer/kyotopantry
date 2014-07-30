@@ -76,6 +76,21 @@ bool gatekeeper::set_job_list(JobsList &jobs_list) {
 	return false;
 }
 
+bool gatekeeper::mark_job_as_done(const int job_id) {
+	JobsList jobs_list;
+	get_jobs_from_db(&jobs_list);
+
+	auto it = jobs_list.begin();
+	for (;it != jobs_list.end(); it++) {
+		if (it->job_id == job_id) {
+			jobs_list.erase(it);
+			break;
+		}
+	}
+
+	return set_job_list(jobs_list);
+}
+
 bool gatekeeper::queue_file_job(std::string &path) {
 	JobsList jobs_list;
 	get_jobs_from_db(&jobs_list);
@@ -201,7 +216,6 @@ void gatekeeper::scheduler() {
 		obj = unpacked.get();
 		obj.convert(&resp);
 
-
 		if (resp["type"] == "job_request") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved job request.");
@@ -255,8 +269,11 @@ void gatekeeper::scheduler() {
 		} else if (resp["type"] == "job_finished") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved job finished.");
+
 			send_ok_response();
 
+			const int job_id = std::stoi(resp["id"]);
+			mark_job_as_done(job_id);
 		} else if (resp["type"] == "worker_end") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved worker shutdown.");
