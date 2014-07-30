@@ -23,8 +23,8 @@ namespace kyotopantry {
 
 		virtual bool do_job() = 0;
 
-	protected:
 		const int job_id;
+	protected:
 		std::string current_file_name;
 		size_t current_file_size;
 		void *current_file;

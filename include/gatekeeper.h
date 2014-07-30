@@ -72,5 +72,6 @@ namespace kyotopantry {
 		void get_jobs_from_db(JobsList *jobs_list);
 		bool set_job_list(JobsList &jobs_list);
 		Job *get_next_job();
+		void send_ok_response();
 	};
 }

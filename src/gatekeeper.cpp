@@ -170,6 +170,18 @@ void gatekeeper::spin() {
 	scheduler_thread.join();
 }
 
+void gatekeeper::send_ok_response() {
+	SchedulerMessage msg;
+	msg["type"] = "ok";
+
+	msgpack::sbuffer ok;
+	msgpack::pack(&ok, msg);
+
+	zmq::message_t response(ok.size());
+	memcpy(response.data(), ok.data(), ok.size());
+	socket->send(response);
+}
+
 void gatekeeper::scheduler() {
 	//zmq::socket_t main_loop_socket(*context, ZMQ_REQ);
 	//main_loop_socket.connect(MAINLOOP_URI);
@@ -243,20 +255,12 @@ void gatekeeper::scheduler() {
 		} else if (resp["type"] == "job_finished") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved job finished.");
+			send_ok_response();
 
 		} else if (resp["type"] == "worker_end") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved worker shutdown.");
-
-			SchedulerMessage msg;
-			msg["type"] = "ok";
-
-			msgpack::sbuffer ok;
-			msgpack::pack(&ok, msg);
-
-			zmq::message_t response(ok.size());
-			memcpy(response.data(), ok.data(), ok.size());
-			socket->send(response);
+			send_ok_response();
 
 			num_workers--;
 			if (num_workers <= 0) {

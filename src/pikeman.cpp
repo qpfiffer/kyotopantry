@@ -155,7 +155,21 @@ void pikeman::send_shutdown() {
 	assert(socket->recv(&server_response) == true);
 }
 
-void pikeman::send_job_success() {
+void pikeman::send_job_success(const int job_id) {
+	SchedulerMessage job_success;
+	job_success["type"] = "job_finished";
+	job_success["id"] = std::to_string(job_id);
+
+	msgpack::sbuffer request;
+	msgpack::pack(&request, job_success);
+
+	zmq::message_t zrequest(request.size());
+	memcpy(zrequest.data(), request.data(), request.size());
+
+	socket->send(zrequest);
+
+	zmq::message_t server_response;
+	assert(socket->recv(&server_response) == true);
 }
 
 void pikeman::send_job_failure() {
@@ -168,7 +182,7 @@ void pikeman::do_work() {
 	while (request_job()) {
 		// Do some goddamn WORK bro
 		if (this->current_job->do_job()) {
-			send_job_success();
+			send_job_success(this->current_job->job_id);
 		} else {
 			ol_log_msg(LOG_WARN, "%s: Could not complete job!.", thread_name.c_str());
 			send_job_failure();
