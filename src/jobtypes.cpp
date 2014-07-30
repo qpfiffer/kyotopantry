@@ -1,3 +1,4 @@
+// vim: noet ts=4 sw=4
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -12,9 +13,6 @@ filejob::filejob(std::string filename) {
 	this->current_file = NULL;
 	this->current_file_size = 0;
 	this->current_file_name = filename;
-}
-
-indexjob::indexjob(std::string filename) : filejob(filename) {
 }
 
 indexjob::~indexjob() {

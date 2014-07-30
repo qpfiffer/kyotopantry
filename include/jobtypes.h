@@ -1,3 +1,4 @@
+// vim: noet ts=4 sw=4
 #pragma once
 #include <string>
 
@@ -22,9 +23,17 @@ namespace kyotopantry {
 
 	class indexjob: public filejob {
 	public:
-		indexjob(std::string filename);
+		indexjob(std::string filename) : filejob(filename) {};
 		~indexjob();
 	private:
 		bool do_job();
 	};
+
+	class dedupejob: public filejob {
+	public:
+		dedupejob(std::string filename) : filejob(filename) {};
+		~dedupejob();
+	private:
+		bool do_job();
+	}
 }
