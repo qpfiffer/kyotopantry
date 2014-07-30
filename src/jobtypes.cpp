@@ -3,9 +3,11 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <zmq.hpp>
+
 #include "jobtypes.h"
 #include "pikeman.h"
 #include "gatekeeper.h"
+#include "SHA3api_ref.h"
 
 using namespace kyotopantry;
 
@@ -48,6 +50,32 @@ bool indexjob::do_job() {
 		ol_log_msg(LOG_WARN, "Could not mmap file.");
 		close(fd);
 		return false;
+	}
+
+
+	unsigned int i = 0;
+	for (; i < (current_file_size / DEFAULT_BLOCKSIZE) + 1; i++) {
+		const unsigned int possible_chunk_end = (i * DEFAULT_BLOCKSIZE) + DEFAULT_BLOCKSIZE;
+		const unsigned int chunk_start = i * DEFAULT_BLOCKSIZE;
+		const unsigned int chunk_end = possible_chunk_end > current_file_size ?
+			current_file_size : possible_chunk_end;
+
+		ol_log_msg(LOG_INFO, "Hashing %i of file.", chunk_end - chunk_start);
+
+		// We hash each DEFAULT_BLOCKSIZE block individually
+		hashState state;
+
+		// Give us a big hash value (512):
+		if (Init(&state, 512) != 0) {
+			ol_log_msg(LOG_WARN, "Could not init Blue Midnight Wish.");
+			return false;
+		}
+
+		unsigned char *data_ptr = (unsigned char *)this->current_file + chunk_start;
+		if (Update(&state, data_ptr, chunk_end) != 0) {
+			ol_log_msg(LOG_WARN, "Could not update Blue Midnight Wish.");
+			return false;
+		}
 	}
 
 	close(fd);
