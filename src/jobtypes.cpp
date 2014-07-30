@@ -59,3 +59,8 @@ bool indexjob::do_job() {
 bool dedupejob::do_job() {
     return true;
 }
+
+bool sleepjob::do_job() {
+    std::this_thread::sleep_for(std::chrono::milliseconds(SNOOZE_AMT));
+    return true;
+}

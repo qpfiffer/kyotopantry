@@ -107,13 +107,22 @@ bool gatekeeper::queue_file_job(std::string &path) {
 	return set_job_list(jobs_list);
 }
 
-std::tuple<bool, std::string> gatekeeper::get_next_index_job() {
+std::tuple<bool, enum JobType, std::string> gatekeeper::get_next_job() {
 	JobsList jobs_list;
 	get_jobs_from_db(&jobs_list);
 
 	auto it = jobs_list.begin();
 	bool found_job = false;
+	bool found_unfinished_index_job = false;
 	for (;it != jobs_list.end(); it++) {
+
+		if (it->being_processed && it->job_type == INDEX) {
+			found_unfinished_index_job = true;
+		}
+
+		// Goddammit, I accidentally made a priority queue...
+		if (it->job_type == DEDUPE && found_unfinished_index_job)
+			continue;
 
 		if (it->being_processed == false) {
 			found_job = true;
@@ -122,21 +131,32 @@ std::tuple<bool, std::string> gatekeeper::get_next_index_job() {
 	}
 
 	if (found_job) {
+		if (found_unfinished_index_job && it->job_type == DEDUPE) {
+			ol_log_msg(LOG_INFO, "Found a dedupe job but we have unfinished index jobs.");
+			return std::make_tuple(false, TRY_AGAIN, "");
+		}
+
 		it->being_processed = true;
 		set_job_list(jobs_list);
 
-		if (verbose)
-			ol_log_msg(LOG_INFO, "Found job %s", it->file_path.c_str());
+		if (verbose) {
+			switch (it->job_type) {
+				case INDEX:
+					ol_log_msg(LOG_INFO, "Found an indexing job %s", it->file_path.c_str());
+					break;
+				case DEDUPE:
+					ol_log_msg(LOG_INFO, "Found a dedupe job %s", it->file_path.c_str());
+					break;
+				default:
+					ol_log_msg(LOG_INFO, "Found a confused job %s", it->file_path.c_str());
+					break;
+			}
+		}
 
-		return std::make_tuple(true, it->file_path);
+		return std::make_tuple(true, (enum JobType)it->job_type, it->file_path);
 	}
 
-	return std::make_tuple(false, "");
-}
-
-std::tuple<bool, std::string> gatekeeper::get_next_dedupe_job() {
-	auto to_return = std::tuple<bool, std::string>(false, "");
-	return to_return;
+	return std::make_tuple(false, NONE, "");
 }
 
 void gatekeeper::spin() {
@@ -166,32 +186,29 @@ void gatekeeper::scheduler() {
 		if (resp["type"] == "job_request") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved job request.");
-			std::tuple<bool, std::string> next_file = get_next_index_job();
+			std::tuple<bool, JobType, std::string> next_file = get_next_job();
 
 			if (std::get<0>(next_file)) {
 				if (verbose)
 					ol_log_msg(LOG_INFO, "Scheduler sending index job.");
 				SchedulerMessage new_job;
-				new_job["type"] = "index_job";
-				std::string next_path = std::get<1>(next_file);
+				switch (std::get<1>(next_file)) {
+					case INDEX:
+						new_job["type"] = "index_job";
+						break;
+					case DEDUPE:
+						new_job["type"] = "dedupe_job";
+						break;
+					case TRY_AGAIN:
+						new_job["type"] = "try_again";
+						break;
+					default: // Fall through like a boss
+					case NONE:
+						new_job["type"] = "no_job";
+						break;
+				}
+				std::string next_path = std::get<2>(next_file);
 				new_job["path"] = next_path;
-
-				msgpack::sbuffer to_send;
-				msgpack::pack(&to_send, new_job);
-
-				zmq::message_t response(to_send.size());
-				memcpy(response.data(), to_send.data(), to_send.size());
-				socket->send(response);
-				continue;
-			}
-
-			std::tuple<bool, std::string> next_dedupe_file = get_next_dedupe_job();
-			if (std::get<0>(next_dedupe_file)) {
-				if (verbose)
-					ol_log_msg(LOG_INFO, "Scheduler sending dedupe job.");
-				SchedulerMessage new_job;
-				new_job["type"] = "dedupe_job";
-				new_job["path"] = std::get<1>(next_dedupe_file);
 
 				msgpack::sbuffer to_send;
 				msgpack::pack(&to_send, new_job);

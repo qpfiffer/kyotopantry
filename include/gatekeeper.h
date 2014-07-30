@@ -25,13 +25,17 @@ namespace kyotopantry {
 	// on.
 	enum JobType {
 		INDEX,
-		DEDUPE
+		DEDUPE,
+		TRY_AGAIN,
+		NONE
 	};
 	struct Job {
 		bool being_processed;
 		std::string file_path;
 		int job_id;
-		int job_type;
+		unsigned char job_type;
+		// ^^^ Actually a JobType enum but MSGPACK doesn't know how to
+		// serialize those so we pretend it's a char.
 
 		MSGPACK_DEFINE(being_processed, file_path, job_id, job_type);
 	};
@@ -67,7 +71,6 @@ namespace kyotopantry {
 
 		void get_jobs_from_db(JobsList *jobs_list);
 		bool set_job_list(JobsList &jobs_list);
-		std::tuple<bool, std::string> get_next_index_job();
-		std::tuple<bool, std::string> get_next_dedupe_job();
+		std::tuple<bool, enum JobType, std::string> get_next_job();
 	};
 }

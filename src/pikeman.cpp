@@ -122,10 +122,16 @@ bool pikeman::request_job() {
 	if (msg["type"] == "no_job") {
 		ol_log_msg(LOG_WARN, "%s: Received no job. Shutting down.", thread_name.c_str());
 		return false;
-	} else if (msg["type"] == "index_job") {
+	}
+
+	delete this->current_job; // Remove the old one.
+	if (msg["type"] == "index_job") {
 		this->current_job = new indexjob(msg["path"]);
 	} else if (msg["type"] == "dedupe_job") {
 		this->current_job = new dedupejob(msg["path"]);
+	} else if (msg["type"] == "try_again") {
+		// This job doesn't really do anything than sit here.
+		this->current_job = new sleepjob(msg["path"]);
 	}
 
 	ol_log_msg(LOG_INFO, "%s: Received job %s.", thread_name.c_str(), current_job->get_current_file_name().c_str());

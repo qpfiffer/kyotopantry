@@ -6,6 +6,9 @@
 // iterate through a file.
 #define DEFAULT_BLOCKSIZE 4096
 
+// Controls how long a "try again" job will sleep for
+#define SNOOZE_AMT 250
+
 namespace kyotopantry {
 	class filejob {
 	public:
@@ -41,6 +44,14 @@ namespace kyotopantry {
 	public:
 		dedupejob(std::string filename) : filejob(filename) {};
 		~dedupejob();
+		bool do_job();
+	};
+
+	// This jobs purpose is to just sleep a thread for a little bit,
+	// while we wait for index jobs to stop happening.
+	class sleepjob: public filejob {
+	public:
+		sleepjob(std::string filename) : filejob(filename) {};
 		bool do_job();
 	};
 }
