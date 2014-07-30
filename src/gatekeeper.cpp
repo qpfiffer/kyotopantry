@@ -15,6 +15,7 @@ gatekeeper::gatekeeper(bool _verbose, int _num_workers) {
 
 	this->verbose = _verbose;
 	this->num_workers = _num_workers;
+	this->job_id_counter = 0;
 	jobs_db = ol_open(".kyotopantry/", "jobs", OL_F_SPLAYTREE);
 
 	if (jobs_db == NULL) {
@@ -82,8 +83,26 @@ bool gatekeeper::queue_file_job(std::string &path) {
 	// Actually add it to the thing in the DB
 	if (verbose)
 		ol_log_msg(LOG_INFO, "Saving job %s", path.c_str());
-	Job new_pair = std::make_pair(false, path);
+
+	// Create indexing Job for this file:
+	Job new_pair = {
+		false,
+		path,
+		job_id_counter,
+		INDEX
+	};
 	jobs_list.push_back(new_pair);
+	this->job_id_counter++;
+
+	// Now create the deduplication job:
+	Job new_pair_dedupe = {
+		false,
+		path,
+		job_id_counter,
+		DEDUPE
+	};
+	jobs_list.push_back(new_pair_dedupe);
+	this->job_id_counter++;
 
 	return set_job_list(jobs_list);
 }
@@ -94,24 +113,22 @@ std::tuple<bool, std::string> gatekeeper::get_next_index_job() {
 
 	auto it = jobs_list.begin();
 	bool found_job = false;
-	Job job;
 	for (;it != jobs_list.end(); it++) {
-		job = *it;
 
-		if (job.first == false) {
+		if (it->being_processed == false) {
 			found_job = true;
 			break;
 		}
 	}
 
 	if (found_job) {
-		it->first = true;
+		it->being_processed = true;
 		set_job_list(jobs_list);
 
 		if (verbose)
-			ol_log_msg(LOG_INFO, "Found job %s", job.second.c_str());
+			ol_log_msg(LOG_INFO, "Found job %s", it->file_path.c_str());
 
-		return std::make_tuple(true, job.second);
+		return std::make_tuple(true, it->file_path);
 	}
 
 	return std::make_tuple(false, "");

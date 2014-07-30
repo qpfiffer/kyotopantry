@@ -159,13 +159,14 @@ void pikeman::do_work() {
 	socket->connect(SCHEDULER_URI);
 	while (request_job()) {
 		// Do some goddamn WORK bro
-		// 1. mmap() file into memory
 		if (!open_job())
 			continue;
-		// 2. Scan through 4k chunks at a time
-		// 3. Ask the database if there exists a chunk with that hash
-		// 4. ???????
-		// 5. File is deduplicated!
+
+		if (!this->current_job->do_job()) {
+			ol_log_msg(LOG_WARN, "%s: Could not complete job!.", thread_name.c_str());
+			// TODO: Tell the gatekeeper we were not able to complete the job
+			// we were assigned.
+		}
 	}
 
 	send_shutdown();

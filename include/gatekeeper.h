@@ -1,6 +1,7 @@
 // vim: noet ts=4 sw=4
 #pragma once
 
+#include <msgpack.hpp>
 #include <chrono>
 #include <map>
 #include <string>
@@ -22,7 +23,24 @@ namespace kyotopantry {
 	// The job list is a list of tuples {<being processed>, <file path>}. Each
 	// tuple is initialized to false, and set to true when it is being worked
 	// on.
-	typedef std::pair<bool, std::string> Job;
+	enum JobType {
+		INDEX,
+		DEDUPE
+	};
+	struct Job {
+		bool being_processed;
+		std::string file_path;
+		int job_id;
+		JobType job_type;
+
+		template <typename Packer>
+		void msgpack_pack(Packer& pk) const {
+		}
+
+		void msgpack_unpack(msgpack::object o) {
+		}
+	};
+
 	typedef std::vector<Job> JobsList;
 	// Messages that the scheduler expects to receieve:
 	typedef std::map<std::string, std::string> SchedulerMessage;
@@ -49,6 +67,8 @@ namespace kyotopantry {
 		ol_database *jobs_db;
 		// Main thread
 		std::thread scheduler_thread;
+		// Autoincrementing job ID.
+		int job_id_counter;
 
 		void get_jobs_from_db(JobsList *jobs_list);
 		bool set_job_list(JobsList &jobs_list);
