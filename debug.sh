@@ -5,7 +5,7 @@ DDIRECTORY=/tmp/kyotopantry_test/
 
 mkdir -p $DDIRECTORY
 
-echo 'test1' > $DDIRECTORY/test1
+echo "$(dd if=/dev/urandom bs=4096 count=2)" > $DDIRECTORY/test1
 echo 'test2' > $DDIRECTORY/test2
 echo 'test3' > $DDIRECTORY/test3
 echo 'test4' > $DDIRECTORY/test4

@@ -6,6 +6,9 @@
 // iterate through a file.
 #define DEFAULT_BLOCKSIZE 4096
 
+// Size of BMW hash
+#define HASH_SIZE 512
+
 // Controls how long a "try again" job will sleep for
 #define SNOOZE_AMT 250
 

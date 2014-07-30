@@ -60,13 +60,13 @@ bool indexjob::do_job() {
 		const unsigned int chunk_end = possible_chunk_end > current_file_size ?
 			current_file_size : possible_chunk_end;
 
-		ol_log_msg(LOG_INFO, "Hashing %i of file.", chunk_end - chunk_start);
+		ol_log_msg(LOG_INFO, "Hashing %i bytes of file.", chunk_end - chunk_start);
 
 		// We hash each DEFAULT_BLOCKSIZE block individually
 		hashState state;
 
 		// Give us a big hash value (512):
-		if (Init(&state, 512) != 0) {
+		if (Init(&state, HASH_SIZE) != 0) {
 			ol_log_msg(LOG_WARN, "Could not init Blue Midnight Wish.");
 			return false;
 		}
@@ -76,7 +76,22 @@ bool indexjob::do_job() {
 			ol_log_msg(LOG_WARN, "Could not update Blue Midnight Wish.");
 			return false;
 		}
+
+		unsigned char hash[64] = {0};
+		if (Final(&state, hash) != 0) {
+			ol_log_msg(LOG_WARN, "Could not finalize Blue Midnight Wish.");
+			return false;
+		}
+
+		char buf[128] = {0};
+		int j = 0;
+		for ( j=0; j<(HASH_SIZE/8); j++ )
+			sprintf(buf + (j * 2), "%02X", hash[j]);
+
+		ol_log_msg(LOG_INFO, "Hash of filechunk is %s.", buf);
 	}
+
+	ol_log_msg(LOG_INFO, "Hashed %i/%i chunks.", i, (current_file_size / DEFAULT_BLOCKSIZE) + 1);
 
 	close(fd);
 	return true;
