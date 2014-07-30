@@ -155,6 +155,12 @@ void pikeman::send_shutdown() {
 	assert(socket->recv(&server_response) == true);
 }
 
+void pikeman::send_job_success() {
+}
+
+void pikeman::send_job_failure() {
+}
+
 void pikeman::do_work() {
 	ol_log_msg(LOG_INFO, "%s: Doing some work.", thread_name.c_str());
 
@@ -162,10 +168,10 @@ void pikeman::do_work() {
 	while (request_job()) {
 		// Do some goddamn WORK bro
 		if (this->current_job->do_job()) {
+			send_job_success();
 		} else {
 			ol_log_msg(LOG_WARN, "%s: Could not complete job!.", thread_name.c_str());
-			// TODO: Tell the gatekeeper we were not able to complete the job
-			// we were assigned.
+			send_job_failure();
 		}
 	}
 
