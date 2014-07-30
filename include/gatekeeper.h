@@ -31,14 +31,9 @@ namespace kyotopantry {
 		bool being_processed;
 		std::string file_path;
 		int job_id;
-		JobType job_type;
+		int job_type;
 
-		template <typename Packer>
-		void msgpack_pack(Packer& pk) const {
-		}
-
-		void msgpack_unpack(msgpack::object o) {
-		}
+		MSGPACK_DEFINE(being_processed, file_path, job_id, job_type);
 	};
 
 	typedef std::vector<Job> JobsList;
