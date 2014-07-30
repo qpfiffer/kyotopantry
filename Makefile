@@ -11,9 +11,12 @@ clean:
 	rm *.o
 	rm $(NAME)
 
+%.o: ./src/%.c
+	$(CC) $(CPPFLAGS) $(INCLUDES) -fpic -c $<
+
 %.o: ./src/%.cpp
 	$(CC) $(CPPFLAGS) $(INCLUDES) -fpic -c $<
 
-$(NAME): vault.o jobtypes.o pikeman.o gatekeeper.o main.o
+$(NAME): BlueMidnightWish_ref.o vault.o jobtypes.o pikeman.o gatekeeper.o main.o
 	$(CC) $(CPPFLAGS) $(INCLUDES) -o $(NAME) $^ $(LIBOLEG) $(LIBS)
 
