@@ -257,7 +257,7 @@ void gatekeeper::scheduler() {
 			// No jobs to send.
 			SchedulerMessage new_job;
 			new_job["type"] = "no_job";
-			new_job["path"] = "AAAAAAAAAAAAA";
+			new_job["path"] = "AAAAAAAAAAAAA"; // Completely unnecessary
 
 			msgpack::sbuffer what;
 			msgpack::pack(&what, new_job);
@@ -266,6 +266,11 @@ void gatekeeper::scheduler() {
 			memcpy(new_response.data(), what.data(), what.size());
 			socket->send(new_response);
 			delete next_job;
+		} else if (resp["type"] == "job_failed") {
+			if (verbose)
+				ol_log_msg(LOG_INFO, "Scheduler receieved job failed.");
+			//TODO: Do something useful here, like requeueing the job.
+			send_ok_response();
 		} else if (resp["type"] == "job_finished") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved job finished.");

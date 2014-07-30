@@ -25,7 +25,7 @@ namespace kyotopantry {
 		// Get a job from the scheduler
 		bool request_job();
 		void send_job_success(const int job_id);
-		void send_job_failure();
+		void send_job_failure(const int job_id);
 		std::thread worker_thread;
 	};
 }
