@@ -12,7 +12,7 @@
 namespace kyotopantry {
 	class filejob {
 	public:
-		filejob(std::string filename);
+		filejob(std::string filename, const int job_id);
 
 		virtual std::string get_current_file_name() {
 			return current_file_name;
@@ -24,6 +24,7 @@ namespace kyotopantry {
 		virtual bool do_job() = 0;
 
 	protected:
+		const int job_id;
 		std::string current_file_name;
 		size_t current_file_size;
 		void *current_file;
@@ -33,7 +34,7 @@ namespace kyotopantry {
 	// and sends them off to the vault.
 	class indexjob: public filejob {
 	public:
-		indexjob(std::string filename) : filejob(filename) {};
+		indexjob(std::string filename, const int id) : filejob(filename, id) {};
 		~indexjob();
 		bool do_job();
 	};
@@ -42,7 +43,7 @@ namespace kyotopantry {
 	// are known to exist by asking the vault about them.
 	class dedupejob: public filejob {
 	public:
-		dedupejob(std::string filename) : filejob(filename) {};
+		dedupejob(std::string filename, const int id) : filejob(filename, id) {};
 		~dedupejob();
 		bool do_job();
 	};
@@ -51,7 +52,7 @@ namespace kyotopantry {
 	// while we wait for index jobs to stop happening.
 	class sleepjob: public filejob {
 	public:
-		sleepjob(std::string filename) : filejob(filename) {};
+		sleepjob(std::string filename, const int id) : filejob(filename, id) {};
 		bool do_job();
 	};
 }

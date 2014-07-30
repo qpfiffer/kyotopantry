@@ -9,10 +9,8 @@
 
 using namespace kyotopantry;
 
-filejob::filejob(std::string filename) {
-	this->current_file = NULL;
-	this->current_file_size = 0;
-	this->current_file_name = filename;
+filejob::filejob(std::string filename, const int id):
+	job_id(id), current_file_name(filename), current_file_size(0), current_file(NULL) {
 }
 
 indexjob::~indexjob() {
@@ -53,14 +51,14 @@ bool indexjob::do_job() {
 	}
 
 	close(fd);
-    return true;
+	return true;
 }
 
 bool dedupejob::do_job() {
-    return true;
+	return true;
 }
 
 bool sleepjob::do_job() {
-    std::this_thread::sleep_for(std::chrono::milliseconds(SNOOZE_AMT));
-    return true;
+	std::this_thread::sleep_for(std::chrono::milliseconds(SNOOZE_AMT));
+	return true;
 }

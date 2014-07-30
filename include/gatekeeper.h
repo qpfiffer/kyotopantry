@@ -71,6 +71,6 @@ namespace kyotopantry {
 
 		void get_jobs_from_db(JobsList *jobs_list);
 		bool set_job_list(JobsList &jobs_list);
-		std::tuple<bool, enum JobType, std::string> get_next_job();
+		Job *get_next_job();
 	};
 }

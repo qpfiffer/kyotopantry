@@ -107,7 +107,7 @@ bool gatekeeper::queue_file_job(std::string &path) {
 	return set_job_list(jobs_list);
 }
 
-std::tuple<bool, enum JobType, std::string> gatekeeper::get_next_job() {
+Job *gatekeeper::get_next_job() {
 	JobsList jobs_list;
 	get_jobs_from_db(&jobs_list);
 
@@ -133,7 +133,10 @@ std::tuple<bool, enum JobType, std::string> gatekeeper::get_next_job() {
 	if (found_job) {
 		if (found_unfinished_index_job && it->job_type == DEDUPE) {
 			ol_log_msg(LOG_INFO, "Found a dedupe job but we have unfinished index jobs.");
-			return std::make_tuple(false, TRY_AGAIN, "");
+			Job *new_job = new Job();
+			new_job->job_type = TRY_AGAIN;
+			new_job->job_id = -1;
+			return new_job;
 		}
 
 		it->being_processed = true;
@@ -153,10 +156,14 @@ std::tuple<bool, enum JobType, std::string> gatekeeper::get_next_job() {
 			}
 		}
 
-		return std::make_tuple(true, (enum JobType)it->job_type, it->file_path);
+		Job *new_job = new Job(*it);
+		return new_job;
 	}
 
-	return std::make_tuple(false, NONE, "");
+	Job *new_job = new Job();
+	new_job->job_type = NONE;
+	new_job->job_id = -1;
+	return new_job;
 }
 
 void gatekeeper::spin() {
@@ -186,13 +193,13 @@ void gatekeeper::scheduler() {
 		if (resp["type"] == "job_request") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved job request.");
-			std::tuple<bool, JobType, std::string> next_file = get_next_job();
+			Job *next_job = get_next_job();
 
-			if (std::get<0>(next_file)) {
+			if (next_job->job_type != NONE) {
 				if (verbose)
 					ol_log_msg(LOG_INFO, "Scheduler sending index job.");
 				SchedulerMessage new_job;
-				switch (std::get<1>(next_file)) {
+				switch (next_job->job_type) {
 					case INDEX:
 						new_job["type"] = "index_job";
 						break;
@@ -207,8 +214,9 @@ void gatekeeper::scheduler() {
 						new_job["type"] = "no_job";
 						break;
 				}
-				std::string next_path = std::get<2>(next_file);
+				std::string next_path = next_job->file_path;
 				new_job["path"] = next_path;
+				new_job["id"] = std::to_string(next_job->job_id);
 
 				msgpack::sbuffer to_send;
 				msgpack::pack(&to_send, new_job);
@@ -216,6 +224,7 @@ void gatekeeper::scheduler() {
 				zmq::message_t response(to_send.size());
 				memcpy(response.data(), to_send.data(), to_send.size());
 				socket->send(response);
+				delete next_job;
 				continue;
 			}
 
@@ -230,6 +239,7 @@ void gatekeeper::scheduler() {
 			zmq::message_t new_response(what.size());
 			memcpy(new_response.data(), what.data(), what.size());
 			socket->send(new_response);
+			delete next_job;
 		} else if (resp["type"] == "job_finished") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler receieved job finished.");
