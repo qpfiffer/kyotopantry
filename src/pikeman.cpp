@@ -139,10 +139,6 @@ bool pikeman::request_job() {
 	return true;
 }
 
-bool pikeman::open_job() {
-	return true;
-}
-
 void pikeman::send_shutdown() {
 	SchedulerMessage job_request;
 	job_request["type"] = "worker_end";
@@ -165,10 +161,8 @@ void pikeman::do_work() {
 	socket->connect(SCHEDULER_URI);
 	while (request_job()) {
 		// Do some goddamn WORK bro
-		if (!open_job())
-			continue;
-
-		if (!this->current_job->do_job()) {
+		if (this->current_job->do_job()) {
+		} else {
 			ol_log_msg(LOG_WARN, "%s: Could not complete job!.", thread_name.c_str());
 			// TODO: Tell the gatekeeper we were not able to complete the job
 			// we were assigned.

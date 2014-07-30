@@ -24,9 +24,6 @@ namespace kyotopantry {
 		void send_shutdown();
 		// Get a job from the scheduler
 		bool request_job();
-		// mmap the file we're going to work on
-		bool open_job();
-		// Gets an int representation of this thread's ID
 		std::thread worker_thread;
 	};
 }
