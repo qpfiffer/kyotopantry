@@ -57,6 +57,9 @@ bool indexjob::setup_map() {
 	return true;
 }
 
+void indexjob::send_block_info(BlockInfo *info) {
+}
+
 bool indexjob::hash_blocks() {
 	unsigned int i = 0;
 	for (; i < (current_file_size / DEFAULT_BLOCKSIZE) + 1; i++) {
@@ -88,6 +91,7 @@ bool indexjob::hash_blocks() {
 		info.start = chunk_start;
 		info.length = chunk_end;
 		info.bmw_hash = std::string(buf);
+		this->send_block_info(&info);
 	}
 
 	ol_log_msg(LOG_INFO, "Hashed %i/%i chunks.", i, (current_file_size / DEFAULT_BLOCKSIZE) + 1);

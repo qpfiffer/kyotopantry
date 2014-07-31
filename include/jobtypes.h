@@ -41,6 +41,7 @@ namespace kyotopantry {
 		~indexjob();
 		bool do_job();
 	private:
+		void send_block_info(BlockInfo *info);
 		bool setup_map();
 		bool hash_blocks();
 	};

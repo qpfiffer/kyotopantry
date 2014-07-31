@@ -2,6 +2,7 @@
 #pragma once
 
 #define BINFO_VERSION 1
+#define BLOCK_PREFIX "block"
 #define B_FAILED_TO_OPEN 601
 #define VAULT_URI "ipc://.vault.sock"
 
