@@ -1,18 +1,19 @@
 // vim: noet ts=4 sw=4
 #pragma once
 
-#include <msgpack.hpp>
-#include <chrono>
-#include <map>
-#include <string>
-#include <thread>
-
 #define GK_FAILED_TO_OPEN 600
 
 #define MAINLOOP_URI "ipc://.mainloop.sock"
 #define SCHEDULER_URI "ipc://.scheduler.sock"
 
 #define JOBS_LIST "all_jobs"
+
+#include <msgpack.hpp>
+#include <chrono>
+#include <map>
+#include <string>
+#include <thread>
+#include "vault.h"
 
 extern "C" {
 #include <oleg.h>
@@ -57,6 +58,9 @@ namespace kyotopantry {
 		// Communication with other procs
 		zmq::context_t *context;
 		zmq::socket_t *socket;
+
+		// This is the main vault instance.
+		vault *theVault;
 
 		// Verbosity on/off
 		bool verbose;

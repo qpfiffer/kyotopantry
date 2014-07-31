@@ -31,6 +31,7 @@ gatekeeper::gatekeeper(bool _verbose, int _num_workers) {
 	int ret = ol_jar(jobs_db, JOBS_LIST, strlen(JOBS_LIST), (unsigned char *)to_save.data(), to_save.size());
 	assert(ret == 0);
 
+	theVault = new vault();
 	scheduler_thread = std::thread(&gatekeeper::scheduler, this);
 }
 
@@ -43,6 +44,8 @@ gatekeeper::~gatekeeper() {
 
 	ol_close(jobs_db);
 
+	theVault->spin();
+	delete theVault;
 	delete socket;
 	delete context;
 }
