@@ -23,7 +23,7 @@ indexjob::~indexjob() {
 dedupejob::~dedupejob() {
 }
 
-bool indexjob::do_job() {
+bool indexjob::setup_map() {
 	struct stat sb = {0};
 	int fd = open(this->current_file_name.c_str(), O_RDONLY);
 
@@ -53,7 +53,11 @@ bool indexjob::do_job() {
 		return false;
 	}
 
+	close(fd);
+	return true;
+}
 
+bool indexjob::hash_blocks() {
 	unsigned int i = 0;
 	for (; i < (current_file_size / DEFAULT_BLOCKSIZE) + 1; i++) {
 		const unsigned int possible_chunk_end = (i * DEFAULT_BLOCKSIZE) + DEFAULT_BLOCKSIZE;
@@ -87,8 +91,15 @@ bool indexjob::do_job() {
 	}
 
 	ol_log_msg(LOG_INFO, "Hashed %i/%i chunks.", i, (current_file_size / DEFAULT_BLOCKSIZE) + 1);
+	return true;
+}
 
-	close(fd);
+bool indexjob::do_job() {
+	// Why does it look like this? I don't know whatever.
+	if (!setup_map())
+		return false;
+	if (!hash_blocks())
+		return false;
 	return true;
 }
 

@@ -40,6 +40,9 @@ namespace kyotopantry {
 		indexjob(std::string filename, const int id) : filejob(filename, id) {};
 		~indexjob();
 		bool do_job();
+	private:
+		bool setup_map();
+		bool hash_blocks();
 	};
 
 	// This job is repsonsible for copying files. It removes any blocks that
