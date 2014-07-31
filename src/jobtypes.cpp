@@ -69,7 +69,7 @@ bool indexjob::hash_blocks() {
 
 		// We hash each DEFAULT_BLOCKSIZE block individually
 		unsigned char *data_ptr = (unsigned char *)this->current_file + chunk_start;
-		unsigned char hash[64] = {0};
+		unsigned char hash[HASH_SIZE/8] = {0};
 
 		if (Hash(HASH_SIZE, data_ptr, chunk_end, hash) != 0) {
 			ol_log_msg(LOG_WARN, "Could not update Blue Midnight Wish.");
