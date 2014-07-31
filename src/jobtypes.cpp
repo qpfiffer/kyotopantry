@@ -8,6 +8,7 @@
 #include "pikeman.h"
 #include "gatekeeper.h"
 #include "SHA3api_ref.h"
+#include "vault.h"
 
 using namespace kyotopantry;
 
@@ -77,6 +78,12 @@ bool indexjob::do_job() {
 			sprintf(buf + (j * 2), "%02X", hash[j]);
 
 		ol_log_msg(LOG_INFO, "Hash of filechunk is %s.", buf);
+
+		BlockInfo info;
+		info.filename = current_file_name;
+		info.start = chunk_start;
+		info.length = chunk_end;
+		info.bmw_hash = std::string(buf);
 	}
 
 	ol_log_msg(LOG_INFO, "Hashed %i/%i chunks.", i, (current_file_size / DEFAULT_BLOCKSIZE) + 1);
