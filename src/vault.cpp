@@ -1,4 +1,5 @@
 // vim: noet ts=4 sw=4
+#include "gatekeeper.h"
 #include "vault.h"
 
 using namespace kyotopantry;
@@ -28,4 +29,24 @@ void vault::spin() {
 }
 
 void vault::do_work() {
+	while (true) {
+		SchedulerMessage resp;
+
+		zmq::message_t request;
+		ol_log_msg(LOG_INFO, "Vault waiting.");
+		assert(socket->recv(&request) == true);
+
+		ol_log_msg(LOG_INFO, "Vault receieved message.");
+
+		msgpack::object obj;
+		msgpack::unpacked unpacked;
+
+		msgpack::unpack(&unpacked, (char *)request.data(), request.size());
+		obj = unpacked.get();
+		obj.convert(&resp);
+
+		if (resp["type"] == "shutdown") {
+			break;
+		}
+	}
 }

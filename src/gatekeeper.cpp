@@ -12,6 +12,8 @@ gatekeeper::gatekeeper(bool _verbose, int _num_workers) {
 	this->context = new zmq::context_t(1);
 	this->socket = new zmq::socket_t(*context, ZMQ_REP);
 	socket->bind(SCHEDULER_URI);
+	this->vsocket = new zmq::socket_t(*context, ZMQ_REQ);
+	vsocket->connect(VAULT_URI);
 
 	this->verbose = _verbose;
 	this->num_workers = _num_workers;
@@ -46,6 +48,7 @@ gatekeeper::~gatekeeper() {
 
 	theVault->spin();
 	delete theVault;
+	delete vsocket;
 	delete socket;
 	delete context;
 }
@@ -200,10 +203,19 @@ void gatekeeper::send_ok_response() {
 	socket->send(response);
 }
 
-void gatekeeper::scheduler() {
-	//zmq::socket_t main_loop_socket(*context, ZMQ_REQ);
-	//main_loop_socket.connect(MAINLOOP_URI);
+void gatekeeper::send_shutdown() {
+	SchedulerMessage vault_shutdown;
+	vault_shutdown["type"] = "shutdown";
 
+	msgpack::sbuffer what;
+	msgpack::pack(&what, vault_shutdown);
+
+	zmq::message_t new_response(what.size());
+	memcpy(new_response.data(), what.data(), what.size());
+	vsocket->send(new_response);
+}
+
+void gatekeeper::scheduler() {
 	// Process job requests from pikemen:
 	while (true) {
 		SchedulerMessage resp;
@@ -290,12 +302,13 @@ void gatekeeper::scheduler() {
 			num_workers--;
 			if (num_workers <= 0) {
 				ol_log_msg(LOG_ERR, "No more workers. Shutting down.");
+				this->send_shutdown();
 				break;
 			}
 		} else if (resp["type"] == "shutdown") {
 			if (verbose)
 				ol_log_msg(LOG_INFO, "Scheduler received shutdown request.");
-
+			this->send_shutdown();
 			break;
 		}
 	}

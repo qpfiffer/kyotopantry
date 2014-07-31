@@ -58,6 +58,9 @@ namespace kyotopantry {
 		// Communication with other procs
 		zmq::context_t *context;
 		zmq::socket_t *socket;
+		// How we talk to the vault:
+		zmq::socket_t *vsocket;
+
 
 		// This is the main vault instance.
 		vault *theVault;
@@ -82,5 +85,6 @@ namespace kyotopantry {
 		// Generic helper method to respond to workers:
 		void send_ok_response();
 		bool mark_job_as_done(const int job_id);
+		void send_shutdown();
 	};
 }

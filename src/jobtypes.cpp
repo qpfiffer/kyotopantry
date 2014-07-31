@@ -73,7 +73,7 @@ bool indexjob::do_job() {
 
 		char buf[128] = {0};
 		int j = 0;
-		for ( j=0; j<(HASH_SIZE/8); j++ )
+		for (j=0; j<(HASH_SIZE/8); j++)
 			sprintf(buf + (j * 2), "%02X", hash[j]);
 
 		ol_log_msg(LOG_INFO, "Hash of filechunk is %s.", buf);
